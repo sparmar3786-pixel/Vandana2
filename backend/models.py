@@ -6,20 +6,26 @@ emit :class:`StrategyResult`, :class:`TradePlan` and :class:`Decision`.
 
 HONESTY NOTE
 ------------
-``confidence`` is a heuristic 0..1 score, NOT a probability and NOT a win rate.
+`confidence` is a heuristic 0..1 score, NOT a probability and NOT a win rate.
 A real win rate can only come from a validated historical backtest of a specific
 setup on real data. Nothing here should be read as a performance promise.
 """
 
 from __future__ import annotations
+
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
+
+
+# ============================ enums ============================
 
 class Side(str, Enum):
     CALL = "CALL"
     PUT = "PUT"
+
 
 class OIClassification(str, Enum):
     """Run93 core 2x2 (premium x OI)."""
@@ -28,6 +34,7 @@ class OIClassification(str, Enum):
     SHORT_COVERING = "SHORT_COVERING"
     LONG_UNWINDING = "LONG_UNWINDING"
     NEUTRAL = "NEUTRAL"
+
 
 class Regime(str, Enum):
     STRONG_BULL = "STRONG_BULL"
@@ -41,12 +48,14 @@ class Regime(str, Enum):
     EXPANSION = "EXPANSION"
     UNCERTAIN = "UNCERTAIN"
 
+
 class Verdict(str, Enum):
     """Closed vocabulary for the final decision. Never add forced CALL/PUT."""
     CALL_BUY = "CALL BUY"
     PUT_BUY = "PUT BUY"
     WAIT = "WAIT"
     NO_QUALIFYING_TRADE = "NO QUALIFYING TRADE"
+
 
 class DataQualityFlag(str, Enum):
     OK = "OK"
@@ -61,17 +70,23 @@ class DataQualityFlag(str, Enum):
     LATENCY = "LATENCY"
     OUT_OF_ORDER = "OUT_OF_ORDER"
 
+
 class OverrideAction(str, Enum):
     BLOCK = "BLOCK"
     EXIT = "EXIT"
     REVERSAL_WATCH = "REVERSAL_WATCH"
     NONE = "NONE"
 
+
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
+
+# ============================ market data ============================
+
 class Tick(BaseModel):
     """A normalised market tick (canonical across all data sources)."""
+
     symbol: str
     exchange: str = "NSE"
     token: Optional[str] = None
@@ -101,10 +116,13 @@ class Tick(BaseModel):
             return self.ask - self.bid
         return None
 
+
 class StrikeSnapshot(BaseModel):
     """One strike row of the option chain (CE + PE), canonical fields."""
+
     strike: float
     is_atm: bool = False
+
     ce_ltp: Optional[float] = None
     ce_oi: Optional[int] = None
     ce_oi_change: Optional[int] = None
@@ -117,6 +135,7 @@ class StrikeSnapshot(BaseModel):
     ce_bid: Optional[float] = None
     ce_ask: Optional[float] = None
     ce_prev_ltp: Optional[float] = None
+
     pe_ltp: Optional[float] = None
     pe_oi: Optional[int] = None
     pe_oi_change: Optional[int] = None
@@ -131,13 +150,25 @@ class StrikeSnapshot(BaseModel):
     pe_prev_ltp: Optional[float] = None
 
     def ce(self) -> Dict[str, Any]:
-        return {"ltp": self.ce_ltp, "oi": self.ce_oi, "oi_change": self.ce_oi_change, "volume": self.ce_volume, "iv": self.ce_iv, "delta": self.ce_delta, "gamma": self.ce_gamma, "theta": self.ce_theta, "vega": self.ce_vega, "bid": self.ce_bid, "ask": self.ce_ask, "prev_ltp": self.ce_prev_ltp}
+        return {
+            "ltp": self.ce_ltp, "oi": self.ce_oi, "oi_change": self.ce_oi_change,
+            "volume": self.ce_volume, "iv": self.ce_iv, "delta": self.ce_delta,
+            "gamma": self.ce_gamma, "theta": self.ce_theta, "vega": self.ce_vega,
+            "bid": self.ce_bid, "ask": self.ce_ask, "prev_ltp": self.ce_prev_ltp,
+        }
 
     def pe(self) -> Dict[str, Any]:
-        return {"ltp": self.pe_ltp, "oi": self.pe_oi, "oi_change": self.pe_oi_change, "volume": self.pe_volume, "iv": self.pe_iv, "delta": self.pe_delta, "gamma": self.pe_gamma, "theta": self.pe_theta, "vega": self.pe_vega, "bid": self.pe_bid, "ask": self.pe_ask, "prev_ltp": self.pe_prev_ltp}
+        return {
+            "ltp": self.pe_ltp, "oi": self.pe_oi, "oi_change": self.pe_oi_change,
+            "volume": self.pe_volume, "iv": self.pe_iv, "delta": self.pe_delta,
+            "gamma": self.pe_gamma, "theta": self.pe_theta, "vega": self.pe_vega,
+            "bid": self.pe_bid, "ask": self.pe_ask, "prev_ltp": self.pe_prev_ltp,
+        }
+
 
 class Snapshot(BaseModel):
     """A full point-in-time option-chain snapshot for one index/expiry."""
+
     index: str
     expiry: str = ""
     spot: Optional[float] = None
@@ -160,8 +191,10 @@ class Snapshot(BaseModel):
             return None
         return self.by_strike().get(self.atm_strike)
 
+
 class DataQualityReport(BaseModel):
     """Result of the data-quality gate (part 02)."""
+
     passed: bool = True
     flags: List[DataQualityFlag] = Field(default_factory=list)
     reasons: List[str] = Field(default_factory=list)
@@ -174,8 +207,12 @@ class DataQualityReport(BaseModel):
         self.reasons.append(reason)
         return self
 
+
+# ============================ strategy layer ============================
+
 class StrategyMeta(BaseModel):
     """Static metadata for a registered strategy module."""
+
     id: str
     number: int
     name: str
@@ -188,8 +225,10 @@ class StrategyMeta(BaseModel):
     advanced: bool = False
     implemented: bool = True
 
+
 class StrategyResult(BaseModel):
     """Runtime output of evaluating one strategy against a context."""
+
     strategy_id: str
     number: int
     name: str
@@ -203,8 +242,12 @@ class StrategyResult(BaseModel):
     reason: str = ""
     advanced: bool = False
 
+
+# ============================ decision layer ============================
+
 class TradePlan(BaseModel):
     """A complete, executable trade plan (paper by default)."""
+
     plan_id: str
     index: str
     side: Side
@@ -224,8 +267,10 @@ class TradePlan(BaseModel):
     suppressed: bool = False
     suppression_reason: str = ""
 
+
 class Decision(BaseModel):
     """Final per-index decision produced by part 32."""
+
     index: str
     verdict: Verdict = Verdict.WAIT
     plans: List[TradePlan] = Field(default_factory=list)
@@ -239,5 +284,6 @@ class Decision(BaseModel):
     ai_summary: Optional[Dict[str, Any]] = None
     notes: List[str] = Field(default_factory=list)
     timestamp: datetime = Field(default_factory=_utcnow)
+
 
 Snapshot.model_rebuild()
