@@ -1,3 +1,4 @@
+# ---------- Point 5: local development automation ----------
 PY ?= python
 VENV ?= .venv
 PORT ?= 8000
