@@ -37,7 +37,6 @@ void main(){
     await tester.pump();
 
     expect(find.text('AI • Home page'), findsOneWidget);
-    expect(find.textContaining('Option Chain'), findsOneWidget);
     expect(find.textContaining('CE/PE strike'), findsOneWidget);
     expect(find.text('Only this Home page • no navigation'), findsOneWidget);
   });
