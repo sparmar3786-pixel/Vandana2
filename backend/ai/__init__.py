@@ -1,1 +1,1 @@
-from .six_layer_ai import MODELS,validate
+"""6-layer AI *validation-only* layer (Puter + direct provider transports)."""

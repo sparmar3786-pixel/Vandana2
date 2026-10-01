@@ -1,1 +1,1 @@
-from .catalog import STRATEGY_REGISTRY,strategy_search
+"""377-module strategy catalogue + 24 advanced modules + registry."""
