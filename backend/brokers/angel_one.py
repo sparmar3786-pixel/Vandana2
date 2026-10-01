@@ -115,7 +115,13 @@ class AngelOneClient(DataSource):
         return float(d["ltp"]) if d.get("ltp") is not None else None
 
     async def get_quote(self,symbol:str,token:str,exchange:str="NSE")->Optional[Tick]:
-        ticks=await self.get_market_data("FULL",[{"exchange":exchange,"token":token,"symbol":symbol}]); return ticks[0] if ticks else None
+        if token.upper()==symbol.upper():
+            resolved=await self.get_index_token(symbol)
+            if resolved:
+                token=resolved
+                exchange="BSE" if symbol.upper().replace(" ","") in {"SENSEX","BANKEX"} else "NSE"
+        ticks=await self.get_market_data("FULL",[{"exchange":exchange,"token":token,"symbol":symbol}])
+        return ticks[0] if ticks else None
 
     async def get_market_data(self,mode:str,tokens:List[Dict[str,str]])->List[Tick]:
         by:Dict[str,List[str]]={}
@@ -195,7 +201,21 @@ class AngelOneClient(DataSource):
         except DataSourceError as e: logger.warning("angel_one: greek feed unavailable ({})",e)
         return Snapshot(index=idx,expiry=expiry,spot=spot,atm_strike=atm,strikes=sorted(sm.values(),key=lambda s:s.strike),source="angel_one",timestamp=datetime.now(timezone.utc))
 
-    async def _index_spot(self,index:str)->float: return self._index_spot_cache.get(index,0.0)
+    async def _index_spot(self,index:str)->float:
+        key=index.upper()
+        cached=self._index_spot_cache.get(key,0.0)
+        if cached: return cached
+        token=await self.get_index_token(key)
+        if token:
+            try:
+                exchange="BSE" if key.replace(" ","") in {"SENSEX","BANKEX"} else "NSE"
+                ticks=await self.get_market_data("FULL",[{"exchange":exchange,"token":token,"symbol":key}])
+                if ticks and ticks[0].ltp:
+                    self._index_spot_cache[key]=ticks[0].ltp
+                    return ticks[0].ltp
+            except Exception as e:
+                logger.warning("angel_one: index spot unavailable for {} ({})",key,e)
+        return 0.0
 
     def list_expiries(self,index:str)->List[str]:
         if self._instruments is None or "name" not in self._instruments: return []
