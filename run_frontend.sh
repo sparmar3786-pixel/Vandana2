@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Point 6: frontend run script.
 # Serve the static browser terminal UI.
 set -euo pipefail
 cd "$(dirname "$0")"
