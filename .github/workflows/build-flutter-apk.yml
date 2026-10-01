@@ -25,6 +25,19 @@ jobs:
         working-directory: flutter_app
         run: flutter create --platforms=android --org com.nseaiterminal .
 
+      - name: Add release INTERNET permission
+        working-directory: flutter_app
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/src/main/AndroidManifest.xml')
+          text = p.read_text()
+          permission = '    <uses-permission android:name="android.permission.INTERNET" />'
+          if 'android.permission.INTERNET' not in text:
+              text = text.replace('    <application', permission + '\\n    <application', 1)
+              p.write_text(text)
+          PY
+
       - name: Get dependencies
         working-directory: flutter_app
         run: flutter pub get
