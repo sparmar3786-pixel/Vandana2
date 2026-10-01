@@ -22,9 +22,14 @@ SECTIONS = (
 
 assert len(_NAMES) == 377, len(_NAMES)
 
-STRATEGY_REGISTRY = {
-    i: Strategy(i, name, next((SECTIONS[j] for j, start in enumerate((1,29,45,55,73,91,111,123,150,168,185,203,220,235,247,261,275,285,306,318,333,355,368)) if i >= start and (j == len(SECTIONS)-1 or i < (1,29,45,55,73,91,111,123,150,168,185,203,220,235,247,261,275,285,306,318,333,355,368)[j+1]), "Unknown")) for i, name in enumerate(_NAMES, 1)
-}
+STRATEGY_REGISTRY = {}
+_STARTS = (1,29,45,55,73,91,111,123,150,168,185,203,220,235,247,261,275,285,306,318,333,355,368)
+for i, name in enumerate(_NAMES, 1):
+    section_idx = 0
+    for j, start in enumerate(_STARTS):
+        if i >= start:
+            section_idx = j
+    STRATEGY_REGISTRY[i] = Strategy(i, name, SECTIONS[section_idx] if section_idx < len(SECTIONS) else "Unknown")
 
 def strategy_search(query: str = "") -> list[Strategy]:
     q = query.strip().lower()
