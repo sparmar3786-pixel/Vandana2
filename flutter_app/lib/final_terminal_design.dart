@@ -217,18 +217,6 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Widget _chips(List<String> x)=>Wrap(spacing:5,runSpacing:5,children:x.map((s)=>Chip(label:Text(s,style:const TextStyle(fontSize:10)))).toList());
   Widget _title(String x)=>Padding(padding:const EdgeInsets.fromLTRB(2,10,2,7),child:Align(alignment:Alignment.centerLeft,child:Text(x,style:const TextStyle(fontWeight:FontWeight.w900))));
   Widget _logo(double size)=>Container(width:size,height:size,decoration:BoxDecoration(borderRadius:BorderRadius.circular(size*.22),gradient:const LinearGradient(colors:[Color(0xff1769e0),Color(0xff14c984)])),child:Icon(Icons.candlestick_chart_rounded,size:size*.52,color:Colors.white));
-  Widget _badge(String s)=>Container(padding:const EdgeInsets.symmetric(horizontal:8,vertical:5),decoration:BoxDecoration(borderRadius:BorderRadius.circular(8),color:(s=='CALL'?const Color(0xff18a66a):const Color(0xffe64b5d)).withOpacity(.13)),child:Text(s,style:TextStyle(fontWeight:FontWeight.w900,color:s=='CALL'?const Color(0xff18a66a):const Color(0xffe64b5d))));
   Widget _preview(String a,String b,String c)=>Container(padding:const EdgeInsets.all(9),decoration:BoxDecoration(borderRadius:BorderRadius.circular(11),border:Border.all(color:Theme.of(context).dividerColor)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(a,style:const TextStyle(fontSize:10)),Text(b,style:const TextStyle(fontWeight:FontWeight.w900)),Text(c,style:const TextStyle(fontSize:10))]));
 }
 
-class _Spark extends CustomPainter{
-  final List<int> v; final Color c; const _Spark(this.v,this.c);
-  @override void paint(Canvas canvas,Size size){
-    if(v.length<2)return;
-    final lo=v.reduce((a,b)=>a<b?a:b).toDouble(),hi=v.reduce((a,b)=>a>b?a:b).toDouble(),r=(hi-lo)==0?1:hi-lo;
-    final p=Paint()..color=c..strokeWidth=3..style=PaintingStyle.stroke..strokeCap=StrokeCap.round;final path=Path();
-    for(var i=0;i<v.length;i++){final x=i*size.width/(v.length-1),y=size.height-((v[i]-lo)/r)*size.height*.82-size.height*.08;if(i==0){path.moveTo(x,y);}else{path.lineTo(x,y);}}
-    canvas.drawPath(path,p);
-  }
-  @override bool shouldRepaint(covariant _Spark old)=>old.v!=v||old.c!=c;
-}
