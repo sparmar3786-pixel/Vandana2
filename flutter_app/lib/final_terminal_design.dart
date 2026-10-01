@@ -502,6 +502,7 @@ class LiveChartPainter extends CustomPainter{
     line(a);
     if(indicators.contains('EMA 8')){line(_ema(a,8));}
     if(indicators.contains('EMA 13')){line(_ema(a,13));}
+    if(indicators.contains('EMA 20/50')){line(_ema(a,20));line(_ema(a,50));}
     final vwap=_vwap();
     if(indicators.contains('VWAP')&&vwap!=null){line(List<double>.filled(a.length,vwap));}
     if(indicators.contains('Bollinger')&&a.length>=20){
