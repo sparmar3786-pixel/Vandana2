@@ -24,12 +24,18 @@ void main(){
     await tester.pumpWidget(const FinalTerminalDesign());
     await tester.pumpAndSettle();
 
+    // The real app starts on Splash / Launch, then enters Home.
+    expect(find.text('GET STARTED'), findsOneWidget);
+    await tester.tap(find.text('GET STARTED'));
+    await tester.pumpAndSettle();
+
     expect(find.text('AI • Home page'), findsNothing);
     await tester.tap(find.text('Option Chain'));
     await tester.pump();
 
     expect(find.text('AI • Home page'), findsOneWidget);
     expect(find.textContaining('Option Chain'), findsOneWidget);
-    expect(find.textContaining('option-chain'), findsOneWidget);
+    expect(find.textContaining('CE/PE strike'), findsOneWidget);
+    expect(find.text('Only this Home page • no navigation'), findsOneWidget);
   });
 }
