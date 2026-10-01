@@ -25,7 +25,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       appBar:AppBar(
         leading:IconButton(icon:const Icon(Icons.menu),onPressed:()=>Scaffold.of(context).openDrawer()),
         title:Row(children:[_logo(32),const SizedBox(width:8),const Expanded(child:Text('NSE-AI-TERMINAL'))]),
-        actions:[const Chip(label:Text('PAPER')),IconButton(
+        actions:[const Chip(label:Text('LIVE')),IconButton(
           onPressed:()=>setState(()=>mode=mode==ThemeMode.dark?ThemeMode.light:ThemeMode.dark),
           icon:Icon(mode==ThemeMode.dark?Icons.light_mode:Icons.dark_mode))]
       ),
@@ -57,7 +57,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       dense:true,selected:tab==i,leading:Icon(_icons[i]),
       title:Text((i+1).toString()+'. '+pages[i]),
       onTap:(){Navigator.pop(context);setState(()=>tab=i);}))),
-    const Padding(padding:EdgeInsets.all(12),child:Text('Paper-first • Live orders OFF • Secrets server-side',style:TextStyle(fontSize:11)))
+    const Padding(padding:EdgeInsets.all(12),child:Text('Live data only • Order placement unavailable • Secrets server-side',style:TextStyle(fontSize:11)))
   ])));
 
   static const _icons=<IconData>[
@@ -81,7 +81,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     const Text('Smart Analysis • Disciplined Decisions',style:TextStyle(fontSize:16,fontWeight:FontWeight.w700)),
     const SizedBox(height:12),_chips(['Run60 + Run93','377 Modules','6-Layer AI']),const SizedBox(height:24),
     FilledButton.icon(onPressed:()=>setState(()=>tab=2),icon:const Icon(Icons.play_arrow),label:const Text('GET STARTED')),
-    const SizedBox(height:10),const Text('PAPER / DEMO MODE • LIVE ORDERS OFF')]);
+    const SizedBox(height:10),const Text('LIVE DATA ONLY • CONNECTION REQUIRED')]);
 
   Widget _login()=>Column(children:[
     _info('Angel One credentials stay server-side',Icons.lock),
@@ -89,15 +89,15 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     const SizedBox(height:8),const TextField(obscureText:true,decoration:InputDecoration(labelText:'PIN',prefixIcon:Icon(Icons.password))),
     const SizedBox(height:8),const TextField(decoration:InputDecoration(labelText:'TOTP',prefixIcon:Icon(Icons.verified_user))),
     const SizedBox(height:10),FilledButton(onPressed:()=>setState(()=>tab=2),child:const Text('CONNECT')),
-    TextButton(onPressed:()=>setState(()=>tab=2),child:const Text('USE DEMO MODE'))]);
+    const SizedBox.shrink()]);
 
   Widget _dashboard()=>Column(children:[
-    _info('Angel One / Data Layer • Connected • Paper-first',Icons.cloud_done),_indexStrip(),
-    _grid([['CALL OI','12.4M','+2.3%'],['PUT OI','11.8M','-1.1%'],['PCR','0.95','Neutral'],['Regime','Bullish','Expansion']]),
-    _verdict('WAIT','No qualifying setup after all gates',Colors.orange),
+    _info('Live data connection required • no simulated market data',Icons.cloud_off),_indexStrip(),
+    _grid([['CALL OI','—','Live'],['PUT OI','—','Live'],['PCR','—','Live'],['Regime','—','Live']]),
+    _verdict('WAIT','Awaiting verified live market data',Colors.orange),
     _chips(['Option Chain','OI Lab','Signals','Portfolio','AI Validation']),_pipeline()]);
 
-  Widget _market()=>Column(children:[_indexStrip(),...indices.map((x)=>_row(x,_ltp(x),'+0.51%')),
+  Widget _market()=>Column(children:[_indexStrip(),...indices.map((x)=>_row(x,'—','Live feed required')),
     _title('Market Breadth'),_grid([['Advances','32',''],['Declines','17',''],['Unchanged','1',''],['PCR','0.95','Neutral']])]);
 
   Widget _chain()=>Column(children:[
@@ -105,39 +105,28 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     Card(child:SingleChildScrollView(scrollDirection:Axis.horizontal,child:DataTable(
       columns:const[DataColumn(label:Text('Strike')),DataColumn(label:Text('CE LTP')),DataColumn(label:Text('CE OI')),
         DataColumn(label:Text('PE LTP')),DataColumn(label:Text('PE OI')),DataColumn(label:Text('Chg OI'))],
-      rows:List.generate(7,(i){final s=24700+(i-3)*50;return DataRow(cells:[
-        DataCell(Text(s.toString())),DataCell(Text((102.3-i*8.1).toStringAsFixed(2))),
-        DataCell(Text((15.2-i*.9).toStringAsFixed(1)+'L')),DataCell(Text((112.4-i*5.6).toStringAsFixed(2))),
-        DataCell(Text((8.2+i*1.1).toStringAsFixed(1)+'L')),DataCell(Text(i.isEven?'+12.4K':'-8.1K'))]);}))),
+      rows:List.generate(7,(i){return const DataRow(cells:[
+        DataCell(Text('—')),DataCell(Text('—')),DataCell(Text('—')),DataCell(Text('—')),DataCell(Text('—')),DataCell(Text('—'))]);}))),
     _info('Missing OI / volume / stale data => NO TRADE',Icons.shield)]);
 
-  Widget _heatmap()=>Column(children:[
-    ...[['24,600','8.4L','6.1L'],['24,650','10.2L','7.4L'],['24,700','14.9L','9.1L'],['24,750','12.1L','12.8L'],['24,800','7.8L','15.3L']].map((r)=>Card(child:Padding(padding:const EdgeInsets.all(12),child:Row(children:[
-      SizedBox(width:62,child:Text(r[0],style:const TextStyle(fontWeight:FontWeight.w800))),Expanded(child:LinearProgressIndicator(value:double.parse(r[1].replaceAll('L',''))/16)),
-      const SizedBox(width:8),Text('CE '+r[1]),const SizedBox(width:10),Text('PE '+r[2])])))),
-    _chips(['OI Concentration','Migration','Wall Break','Wall Rebuild','OI Velocity'])]);
+  Widget _heatmap()=>Column(children:[_info('OI Heatmap will populate from the verified live option chain.',Icons.cloud_off),_chips(['OI Concentration','Migration','Wall Break','Wall Rebuild','OI Velocity'])]);
 
-  Widget _premium()=>Column(children:[_chart('Premium Momentum',[38,42,41,50,56,61,58,70,76,73]),
-    _chart('Volume / OI Confirmation',[18,20,25,22,32,40,37,44,49,53]),
+  Widget _premium()=>Column(children:[_info('Premium and volume charts require verified live data.',Icons.cloud_off),
     _chips(['Premium ↑','Premium ↓','Volume Spike','Price/OI Divergence','Volume + OI'])]);
 
-  Widget _greeks()=>Column(children:[_grid([['ATM Delta','0.52',''],['Gamma','0.018',''],['Theta','-4.2',''],['Vega','12.4',''],['IV','14.2%',''],['IV Skew','+0.8%','']]),
-    _chart('IV Surface / Skew',[35,39,45,42,50,57,53,61,59,65]),_info('IV is confirmation evidence; it does not create a new entry formula.',Icons.info_outline)]);
+  Widget _greeks()=>Column(children:[_grid([['ATM Delta','—','Live'],['Gamma','—','Live'],['Theta','—','Live'],['Vega','—','Live'],['IV','—','Live'],['IV Skew','—','Live']]),
+    _info('IV surface requires verified live option data.',Icons.cloud_off),_info('IV is confirmation evidence; it does not create a new entry formula.',Icons.info_outline)]);
 
-  Widget _flow()=>Column(children:[_grid([['Net Flow','+12.4K',''],['Buy Ratio','68%',''],['Large Lots','23%',''],['Spread','0.18%','']]),
-    _chart('Observable Order Flow',[22,27,25,31,36,34,42,48,46,55]),_chips(['Buyer Initiated','Seller Initiated','Tick Momentum','Absorption','Reversal'])]);
+  Widget _flow()=>Column(children:[_grid([['Net Flow','—','Live'],['Buy Ratio','—','Live'],['Large Lots','—','Live'],['Spread','—','Live']]),
+    _info('Observable order flow requires live tick/trade data.',Icons.cloud_off),_chips(['Buyer Initiated','Seller Initiated','Tick Momentum','Absorption','Reversal'])]);
 
-  Widget _regime()=>Column(children:[_verdict('BULL / EXPANSION','Trend Up • Volatility Low • Momentum Positive',const Color(0xff18a66a)),
-    _grid([['Trend','Uptrend',''],['Volatility','Low',''],['Momentum','Positive',''],['Mode','Expansion','']]),
+  Widget _regime()=>Column(children:[_verdict('WAIT','Market regime pending verified live data',Colors.orange),
+    _grid([['Trend','—','Live'],['Volatility','—','Live'],['Momentum','—','Live'],['Mode','—','Live']]),
     _chips(['Strong Bull','Strong Bear','Sideways','Range','Breakout','Compression','Mean Reversion'])]);
 
-  Widget _plans()=>Column(children:[_info('Only genuinely qualifying complete plans are shown. No fabricated padding.',Icons.verified),
-    _plan('CALL','24,700','102.30','94.50','112.40','1:1.2'),_plan('CALL','24,800','81.20','74.00','96.80','1:1.2'),
-    _plan('PUT','24,600','96.40','110.20','87.60','1:1.1'),_plan('CALL','24,900','63.10','58.00','71.20','1:1.7'),
-    _plan('PUT','24,500','76.80','67.50','88.40','1:1.8')]);
+  Widget _plans()=>Column(children:[_info('No trade plan is displayed until verified live data passes every deterministic gate.',Icons.verified),_verdict('NO TRADE','Live market data required before qualification.',Colors.grey)]);
 
-  Widget _backtest()=>Column(children:[_grid([['Trades','1,284',''],['Avg R','1.8',''],['Max DD','12.3%',''],['Expectancy','+0.42R',''],['Profit Factor','1.61',''],['Streak','8 / 5','']]),
-    _chart('Equity Curve',[20,24,22,29,31,28,36,40,37,46,51,48]),_chips(['Strategy-wise','Index-wise','CE vs PE','Expiry','Time Window','Regime']),
+  Widget _backtest()=>Column(children:[_info('Backtest results appear only after a real historical dataset and completed run.',Icons.history),_chips(['Strategy-wise','Index-wise','CE vs PE','Expiry','Time Window','Regime']),
     _info('Win-rate claims require setup-specific historical backtest evidence.',Icons.history)]);
 
   Widget _registry()=>Column(children:[const TextField(decoration:InputDecoration(prefixIcon:Icon(Icons.search),hintText:'Search 377 modules')),const SizedBox(height:8),
@@ -150,14 +139,13 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     _verdict('WAIT OVERRIDE','AI may downgrade; it never invents strike, entry, SL or target.',Colors.orange),
     _info('Puter.js listModels() is checked at runtime.',Icons.auto_awesome)]);
 
-  Widget _settings()=>Column(children:[_setting('Data source','Angel One → MCP → NSE public → Demo'),_setting('Advanced engine','Optional / gated'),
-    _setting('AI','Puter.js validation-only'),_setting('Live orders','OFF'),_setting('Risk / R:R','Single gate'),
-    _setting('Storage','Ticks • snapshots • signals • backtests'),_chips(['Feed Latency','Data Gaps','Gate Blocks','Module Hit Rate','Drift'])]);
+  Widget _settings()=>Column(children:[_setting('Data source','Angel One → MCP → NSE public (verified live only)'),_setting('Advanced engine','Optional / gated'),
+    _setting('AI','Puter.js validation-only'),_setting('Order placement','Not available in this APK'),_setting('Risk / R:R','Single gate'),
+    _setting('Storage','Verified market snapshots • signals • backtests'),_chips(['Feed Latency','Data Gaps','Gate Blocks','Module Hit Rate','Drift'])]);
 
-  Widget _portfolio()=>Column(children:[_metric('Today P&L','+₹2,146','Paper'),_row('NIFTY 50 CE 24,700','Qty 75 • Avg ₹120.50','+₹3,366'),
-    _row('BANK NIFTY PE 52,000','Qty 50 • Avg ₹210','-₹1,580'),_chips(['Paper Order','Modify','Cancel','Trade History'])]);
+  Widget _portfolio()=>Column(children:[_info('Live portfolio data is unavailable until an authenticated live account/feed is connected.',Icons.cloud_off),_grid([['Positions','—','Live'],['P&L','—','Live'],['Margin','—','Live'],['Orders','—','Live']]),_chips(['Trade History','Account Status'])]);
 
-  Widget _charts()=>Column(children:[_chart('NIFTY 50 • 5m',[40,43,41,49,47,55,61,58,68,73,70,80]),
+  Widget _charts()=>Column(children:[_info('Charts will render only verified live market data.',Icons.cloud_off),
     _chips(['1m','2m','3m','5m','10m','15m','30m','1H','2H','4H','1D']),_chips(['EMA 8/13','VWAP','RSI','MACD','ATR','Bollinger'])]);
 
   Widget _detail()=>Column(children:[_info('S006 • OI Wall Break',Icons.rule),_setting('Family','OI / Position'),_setting('Type','Signal + confirmation'),
@@ -166,15 +154,14 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Widget _risk()=>Column(children:[_grid([['Max Risk / Trade','1.0%',''],['Max Total Risk','5.0%',''],['R:R Gate','PASS',''],['Spread','PASS',''],['Liquidity','PASS',''],['Gap Risk','PASS','']]),
     _verdict('RISK GATE','Single deterministic gate controls entry eligibility.',const Color(0xff18a66a)),_chips(['Structure SL','Premium SL','ATR SL','Trailing','Break-even','Time Exit'])]);
 
-  Widget _alerts()=>Column(children:[_row('10:24','CALL signal candidate','High'),_row('10:18','Data quality OK','Info'),_row('10:09','Regime changed','Info'),_row('09:41','Risk limit check','OK'),_row('09:30','Market open','Info')]);
+  Widget _alerts()=>Column(children:[_info('No alerts until verified live data is received.',Icons.cloud_off)]);
 
   Widget _education()=>Column(children:['How to read Option Chain','OI Classification — 4 Types','377 Strategy Registry','Risk / R:R Gate','AI Validation Guide','Data Quality / NO TRADE'].map((x)=>_row('Guide',x,'›')).toList());
 
   Widget _models()=>Column(children:[_setting('Provider','Puter.js • Zero Key'),_setting('Catalogue','Runtime listModels()'),
     ...['GPT-5.6 Luna','Claude Sonnet 4.6','GPT-5.6 Sol','DeepSeek Chat','Gemini 2.5 Flash','Grok 4'].map((x)=>_row(x,'Available',''))]);
 
-  Widget _feed()=>Column(children:[_row('Angel One','Connected','✓'),_row('NSE Public','Standby','✓'),_row('NSE MCP','Connected','✓'),_row('Demo','Fallback',''),
-    _grid([['Latency','320 ms',''],['Freshness','OK',''],['Gaps','0',''],['Sync','OK','']])]);
+  Widget _feed()=>Column(children:[_row('Angel One','Awaiting live connection','—'),_row('NSE Public','Standby','—'),_row('NSE MCP','Awaiting live source','—'),_grid([['Latency','—','Live'],['Freshness','—','Live'],['Gaps','—','Live'],['Sync','—','Live']])]);
 
   Widget _btSettings()=>Column(children:[_setting('Strategy family','All families'),_setting('Time range','3 months'),_setting('Index','NIFTY 50'),_setting('Mode','Walk-forward'),
     _chips(['Run Backtest','Out-of-Sample','Monte Carlo','Sensitivity','Slippage','Transaction Cost'])]);
@@ -235,7 +222,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Widget _logo(double size)=>Container(width:size,height:size,decoration:BoxDecoration(borderRadius:BorderRadius.circular(size*.22),gradient:const LinearGradient(colors:[Color(0xff1769e0),Color(0xff14c984)])),child:Icon(Icons.candlestick_chart_rounded,size:size*.52,color:Colors.white));
   Widget _badge(String s)=>Container(padding:const EdgeInsets.symmetric(horizontal:8,vertical:5),decoration:BoxDecoration(borderRadius:BorderRadius.circular(8),color:(s=='CALL'?const Color(0xff18a66a):const Color(0xffe64b5d)).withOpacity(.13)),child:Text(s,style:TextStyle(fontWeight:FontWeight.w900,color:s=='CALL'?const Color(0xff18a66a):const Color(0xffe64b5d))));
   Widget _preview(String a,String b,String c)=>Container(padding:const EdgeInsets.all(9),decoration:BoxDecoration(borderRadius:BorderRadius.circular(11),border:Border.all(color:Theme.of(context).dividerColor)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(a,style:const TextStyle(fontSize:10)),Text(b,style:const TextStyle(fontWeight:FontWeight.w900)),Text(c,style:const TextStyle(fontSize:10))]));
-  String _ltp(String x)=>{'NIFTY 50':'24,689.75','BANK NIFTY':'52,317.20','FINNIFTY':'23,482.10','MIDCPNIFTY':'12,345.60','SENSEX':'81,742.20','BANKEX':'56,210.75'}[x]??'—';
+  String _ltp(String x)=>'—';
 }
 
 class _Spark extends CustomPainter{
