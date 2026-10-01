@@ -1,0 +1,1 @@
+const s=document.getElementById("status");const ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+(location.hostname||"localhost")+":8000/ws");ws.onmessage=e=>{const m=JSON.parse(e.data);s.textContent=m.type==="ready"?m.app+" · "+m.mode+" · 6-layer validation boundary ready":JSON.stringify(m)};ws.onerror=()=>s.textContent="Backend not reachable";

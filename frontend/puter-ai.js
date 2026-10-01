@@ -1,0 +1,1 @@
+window.VandanaAI={models:["GPT-5.6 Luna","Claude Sonnet 4.6","GPT-5.6 Sol","DeepSeek Chat","Gemini 2.5 Flash","Grok 4"],validationOnly:true};
