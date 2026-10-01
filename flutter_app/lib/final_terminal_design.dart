@@ -335,12 +335,6 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     _verdict('NO TRADE','No complete qualifying setup or data-quality failure',Colors.grey),
     _info('These are the only four final outputs.',Icons.gavel)]);
 
-  Widget _themeCard(bool dark)=>Card(color:dark?const Color(0xff0b1727):Colors.white,child:Padding(padding:const EdgeInsets.all(18),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-    Text('NSE-AI-TERMINAL',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900,color:dark?Colors.white:const Color(0xff132238))),
-    const SizedBox(height:12),Row(children:[Expanded(child:_preview('NIFTY 50','—','LIVE FEED')),const SizedBox(width:8),Expanded(child:_preview('PCR','—','LIVE FEED'))]),
-    const SizedBox(height:12),Container(padding:const EdgeInsets.all(14),decoration:BoxDecoration(borderRadius:BorderRadius.circular(13),color:dark?const Color(0xff12233a):const Color(0xffedf5ff)),
-      child:const Row(children:[Icon(Icons.pause_circle_outline,color:Colors.orange),SizedBox(width:8),Text('WAIT • No qualifying setup')]))])));
-
   Widget _pipeline()=>Card(child:Padding(padding:const EdgeInsets.all(13),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     const Text('42-POINT PIPELINE',style:TextStyle(fontWeight:FontWeight.w900)),const SizedBox(height:8),
     _chips(['Data','Quality','Regime','Price','Indicators','OI','Premium','Seller','CE/PE','Override','Strike','Risk','AI','Decision'])])));
