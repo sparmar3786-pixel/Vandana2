@@ -28,6 +28,9 @@ jobs:
         working-directory: flutter_app
         run: flutter pub get
 
+      - name: Validate Python syntax
+        run: python -m compileall -q backend
+
       - name: Analyze Dart
         working-directory: flutter_app
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
