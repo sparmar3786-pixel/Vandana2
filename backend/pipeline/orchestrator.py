@@ -20,7 +20,7 @@ class TerminalEngine:
         self.settings=get_settings(); self.memory=memory; self.broadcaster=broadcaster
         self._source=None; self._ai=None; self._running=False
         self._snapshots: Dict[str,Snapshot]={}; self._decisions: Dict[str,Decision]={}
-        self._prev_snapshots: Dict[str,Snapshot]={}
+        self._prev_snapshots: Dict[str,Snapshot]={}; self._contexts: Dict[str,PipelineContext]={}
         self._ticks={i:deque(maxlen=500) for i in self.settings.index_list}
         self._last_bias: Dict[str,float]={}; self._cycle=0
 
@@ -80,6 +80,7 @@ class TerminalEngine:
             if inspect.isawaitable(res):res=await res
             ctx.results.append(res)
         self._prev_snapshots[index]=snapshot
+        self._contexts[index]=ctx
         self._last_bias[index]=(ctx.get("oi") or {}).get("bias",0.0)
         return ctx.get("decision")
 
@@ -88,6 +89,17 @@ class TerminalEngine:
 
     def latest_decision(self,index:str)->Optional[Decision]:
         return self._decisions.get(index.upper())
+
+    def latest_context(self,index:str)->Optional[PipelineContext]:
+        return self._contexts.get(index.upper())
+
+    async def ai_validate(self,index:str)->Dict[str,Any]:
+        if self._ai is None:
+            return {"enabled":False,"reason":"AI validation is disabled","layers":[],"wait_override":False}
+        ctx=self.latest_context(index)
+        if ctx is None:
+            return {"enabled":True,"degraded":True,"reason":"no live engine context yet","layers":[],"wait_override":False}
+        return await self._ai.validate(ctx)
 
     def state_frame(self)->Dict[str,Any]:
         return {
