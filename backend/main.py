@@ -15,8 +15,7 @@ WS   /ws                          live stream: snapshot / decision / logs
 
 SAFETY
 ------
-Live orders are OFF by default. Even when ``ENABLE_LIVE_ORDERS=1`` the endpoint
-requires a ``confirm`` token echoed from a human-readable summary.
+Market-data, analysis, strategy-search and validation only; order placement and paper trading are not exposed.
 """
 
 from __future__ import annotations
@@ -205,29 +204,34 @@ class OrderRequest(BaseModel):
     confirm: str = ""
 
 
-@app.post("/api/orders/paper")
-async def paper_order(req: OrderRequest) -> Dict[str, Any]:
-    return {
-        "mode": "PAPER",
-        "accepted": True,
-        "order": req.model_dump(),
-        "note": "paper fill only — no broker order was placed",
-    }
+@app.get("/api/angel/status")
+async def angel_status() -> Dict[str, Any]:
+    source = getattr(state.engine, "_source", None) if state.engine else None
+    return {"broker":"Angel One SmartAPI","connected":bool(source and getattr(source,"connected",False)),"source":getattr(source,"name","none"),"live_data_only":True}
 
 
-@app.post("/api/orders/live")
-async def live_order(req: OrderRequest) -> Dict[str, Any]:
-    if not settings.live_orders_on:
-        raise HTTPException(403, "live orders are disabled (ENABLE_LIVE_ORDERS=0)")
-    if settings.human_confirm_required:
-        expected = f"{req.index}-{req.option_type}-{req.strike}-{req.side}"
-        if req.confirm != expected:
-            raise HTTPException(400, f"human confirmation required; echo confirm={expected!r}")
-    if state.engine is None:
-        raise HTTPException(503, "engine not ready")
-    result = await state.engine.place_live_order(req.model_dump())
-    return {"mode": "LIVE", **result}
+@app.post("/api/angel/connect")
+async def angel_connect() -> Dict[str, Any]:
+    source = getattr(state.engine, "_source", None) if state.engine else None
+    if source is None: raise HTTPException(503,"engine not ready")
+    try: await source.connect()
+    except Exception as e: raise HTTPException(502,f"Angel One connection failed: {e}")
+    return {"broker":"Angel One SmartAPI","connected":True,"source":getattr(source,"name","angel_one"),"live_data_only":True}
 
+
+@app.get("/api/candles/{index}")
+async def api_candles(index:str, interval:str="FIVE_MINUTE", days:int=5) -> Dict[str,Any]:
+    source = getattr(state.engine, "_source", None) if state.engine else None
+    if source is None or not getattr(source,"connected",False): raise HTTPException(503,"Angel One live data is not connected")
+    if not hasattr(source,"get_index_token"): raise HTTPException(503,"selected live source does not expose index candles")
+    token=await source.get_index_token(index)
+    if not token: raise HTTPException(404,f"index token not found for {index}")
+    from datetime import datetime,timedelta,timezone
+    now=datetime.now(timezone.utc).astimezone(); frm=now-timedelta(days=max(1,min(days,30)))
+    exchange="BSE" if index.upper().replace(" ","") in {"SENSEX","BANKEX"} else "NSE"
+    df=await source.get_historical(token,exchange,interval,frm,now)
+    rows=[] if df.empty else df.where(df.notna(),None).to_dict(orient="records")
+    return {"index":index.upper(),"interval":interval,"rows":rows,"source":getattr(source,"name","angel_one"),"live_data_only":True}
 
 # ----------------------------- WS -----------------------------
 
