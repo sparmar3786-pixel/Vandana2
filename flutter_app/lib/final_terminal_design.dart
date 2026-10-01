@@ -120,7 +120,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       final r=await http.post(Uri.parse('$base/api/angel/connect')).timeout(const Duration(seconds:12));
       final j=jsonDecode(r.body) as Map<String,dynamic>;
       setState(()=>apiStatus=r.statusCode<300 && j['connected']==true?'Angel One connected':'Connection failed');
-      if(r.statusCode<300) await _loadCandles();
+      if(r.statusCode<300){await _loadCandles();}
     }catch(_){setState(()=>apiStatus='Backend connection failed');}
   }
 
@@ -377,7 +377,7 @@ class LiveChartPainter extends CustomPainter{
   @override void paint(Canvas canvas,Size size){
     final a=_close(); if(a.length<2){return;}
     final minV=a.reduce((x,y)=>x<y?x:y),maxV=a.reduce((x,y)=>x>y?x:y);
-    final span=(maxV-minV).abs()<0.0001?1:(maxV-minV);
+    final double span=(maxV-minV).abs()<0.0001?1.0:(maxV-minV);
     Offset pt(int i,double v)=>Offset(i*(size.width/(a.length-1)),size.height-((v-minV)/span)*size.height*.82-size.height*.08);
     void line(List<double> vals){
       final path=Path();
@@ -393,7 +393,7 @@ class LiveChartPainter extends CustomPainter{
       final upper=<double>[],lower=<double>[];
       for(var i=0;i<a.length;i++){
         final start=i<19?0:i-19; final w=a.sublist(start,i+1); final m=w.reduce((x,y)=>x+y)/w.length;
-        final variance=w.map((x)=>(x-m)*(x-m)).reduce((x,y)=>x+y)/w.length; final sd=variance>0?variance.sqrt():0;
+        final variance=w.map((x)=>(x-m)*(x-m)).reduce((x,y)=>x+y)/w.length; final double sd=variance>0?variance.sqrt():0.0;
         upper.add(m+2*sd);lower.add(m-2*sd);
       }
       line(upper);line(lower);
