@@ -24,14 +24,22 @@ class TerminalEngine:
         self._ticks={i:deque(maxlen=500) for i in self.settings.index_list}
         self._last_bias: Dict[str,float]={}; self._cycle=0
 
-    async def start(self)->None:
-        from backend.brokers.factory import get_data_source
-        self._source=get_data_source()
-        await self._source.connect()
-        if self.settings.ai_on:
+    async def ensure_source(self):
+        if self._source is None:
+            from backend.brokers.factory import get_data_source
+            self._source=get_data_source()
+        return self._source
+
+    async def connect_source(self)->None:
+        source=await self.ensure_source()
+        await source.connect()
+        if self.settings.ai_on and self._ai is None:
             from backend.ai.six_layer_ai import build_ai_client
             self._ai=build_ai_client(self.settings)
         self._running=True
+
+    async def start(self)->None:
+        await self.connect_source()
         logger.info("engine: started (source={}, indices={})",getattr(self._source,"name","?"),self.settings.index_list)
 
     async def stop(self)->None:
@@ -41,10 +49,17 @@ class TerminalEngine:
             except Exception: pass
 
     async def run_forever(self)->None:
-        await self.start()
-        while self._running:
-            try: await self.run_cycle()
-            except Exception as e: logger.exception("engine: cycle error: {}",e)
+        while True:
+            try:
+                if not self._running:
+                    await self.start()
+                await self.run_cycle()
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                self._running=False
+                logger.error("engine: startup/cycle error: {}",e)
+                await asyncio.sleep(5.0)
             await asyncio.sleep(CYCLE_SECONDS)
 
     async def run_cycle(self)->None:
