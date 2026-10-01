@@ -29,6 +29,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   bool showTerminalApiKey=false;
   bool showAngelApiKey=false;
   String loginStatus='';
+  final GlobalKey<ScaffoldMessengerState> _messengerKey = GlobalKey<ScaffoldMessengerState>();
   // 30-screen reference layout from the supplied NSE-AI-TERMINAL design.
   // Core live-data screens are preserved; no order-placement screen is exposed.
   static const pages=<String>[
@@ -43,6 +44,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
 
   @override Widget build(BuildContext context)=>MaterialApp(
     debugShowCheckedModeBanner:false,title:'NSE-AI-TERMINAL',themeMode:mode,
+    scaffoldMessengerKey:_messengerKey,
     theme:_theme(false),darkTheme:_theme(true),
     home:Builder(builder:(context)=>Scaffold(
       appBar:AppBar(
@@ -559,7 +561,9 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
 
   void _showHomeAiNotification(String label,String explanation){
     if(!mounted)return;
-    ScaffoldMessenger.of(context)
+    final messenger=_messengerKey.currentState;
+    if(messenger==null)return;
+    messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
         duration:const Duration(seconds:6),
