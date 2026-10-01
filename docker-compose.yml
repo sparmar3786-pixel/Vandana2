@@ -58,3 +58,7 @@ services:
       - "8765:8765"
     profiles: ["mcp"]
     restart: unless-stopped
+
+# ---------- Point 4: container orchestration ----------
+# Backend, frontend and optional NSE MCP services are isolated into
+# separate containers. Live orders remain controlled by .env flags.
