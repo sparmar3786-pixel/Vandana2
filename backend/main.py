@@ -223,11 +223,15 @@ async def angel_status() -> Dict[str, Any]:
 
 @app.post("/api/angel/connect")
 async def angel_connect() -> Dict[str, Any]:
-    source = getattr(state.engine, "_source", None) if state.engine else None
-    if source is None: raise HTTPException(503,"engine not ready")
-    try: await source.connect()
-    except Exception as e: raise HTTPException(502,f"Angel One connection failed: {e}")
-    return {"broker":"Angel One SmartAPI","connected":True,"source":getattr(source,"name","angel_one"),"live_data_only":True}
+    if state.engine is None:
+        raise HTTPException(503,"engine not ready")
+    try:
+        await state.engine.connect_source()
+    except Exception as e:
+        raise HTTPException(502,f"Angel One connection failed: {e}")
+    source=getattr(state.engine,"_source",None)
+    return {"broker":"Angel One SmartAPI","connected":bool(source and getattr(source,"connected",False)),
+            "source":getattr(source,"name","angel_one"),"live_data_only":True}
 
 
 @app.get("/api/candles/{index}")
