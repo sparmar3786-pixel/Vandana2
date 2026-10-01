@@ -754,3 +754,62 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Widget _preview(String a,String b,String c)=>Container(padding:const EdgeInsets.all(9),decoration:BoxDecoration(borderRadius:BorderRadius.circular(11),border:Border.all(color:Theme.of(context).dividerColor)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(a,style:const TextStyle(fontSize:10)),Text(b,style:const TextStyle(fontWeight:FontWeight.w900)),Text(c,style:const TextStyle(fontSize:10))]));
 }
 
+
+
+class LiveChartPainter extends CustomPainter{
+  final List<Map<String,dynamic>> candles;
+  final Set<String> indicators;
+  LiveChartPainter({required this.candles,required this.indicators});
+
+  double? _n(dynamic v)=>v is num?v.toDouble():double.tryParse(v?.toString() ?? '');
+  List<double> _close()=>candles.map((x)=>_n(x['close'])).whereType<double>().toList();
+  List<double> _ema(List<double> a,int n){
+    if(a.isEmpty)return [];
+    final k=2/(n+1); final out=<double>[a.first];
+    for(var i=1;i<a.length;i++)out.add(a[i]*k+out.last*(1-k));
+    return out;
+  }
+  double? _vwap(){
+    var pv=0.0,v=0.0;
+    for(final r in candles){
+      final h=_n(r['high']),l=_n(r['low']),c=_n(r['close']),vol=_n(r['volume']);
+      if(h!=null&&l!=null&&c!=null&&vol!=null){pv+=((h+l+c)/3)*vol;v+=vol;}
+    }
+    return v==0?null:pv/v;
+  }
+  @override void paint(Canvas canvas,Size size){
+    final a=_close(); if(a.length<2)return;
+    final minV=a.reduce((x,y)=>x<y?x:y),maxV=a.reduce((x,y)=>x>y?x:y);
+    final span=(maxV-minV).abs()<0.0001?1:(maxV-minV);
+    Offset pt(int i,double v)=>Offset(i*(size.width/(a.length-1)),size.height-((v-minV)/span)*size.height*.82-size.height*.08);
+    void line(List<double> vals){
+      final path=Path();
+      for(var i=0;i<vals.length;i++){final p=pt(i,vals[i]);if(i==0)path.moveTo(p.dx,p.dy);else path.lineTo(p.dx,p.dy);}
+      canvas.drawPath(path,Paint()..strokeWidth=2..style=PaintingStyle.stroke);
+    }
+    line(a);
+    if(indicators.contains('EMA 8'))line(_ema(a,8));
+    if(indicators.contains('EMA 13'))line(_ema(a,13));
+    final vwap=_vwap();
+    if(indicators.contains('VWAP')&&vwap!=null)line(List<double>.filled(a.length,vwap));
+    if(indicators.contains('Bollinger')&&a.length>=20){
+      final ema=_ema(a,20); final upper=<double>[],lower=<double>[];
+      for(var i=0;i<a.length;i++){
+        final start=i<19?0:i-19; final w=a.sublist(start,i+1); final m=w.reduce((x,y)=>x+y)/w.length;
+        final variance=w.map((x)=>(x-m)*(x-m)).reduce((x,y)=>x+y)/w.length; final sd=variance>0?variance.sqrt():0;
+        upper.add(m+2*sd);lower.add(m-2*sd);
+      }
+      line(upper);line(lower);
+    }
+  }
+  @override bool shouldRepaint(covariant LiveChartPainter old)=>old.candles!=candles || old.indicators!=indicators;
+}
+
+extension on double{
+  double sqrt()=>this<=0?0:mathSqrt(this);
+}
+double mathSqrt(double x){
+  var g=x>1?x:1.0;
+  for(var i=0;i<12;i++)g=(g+x/g)/2;
+  return g;
+}
