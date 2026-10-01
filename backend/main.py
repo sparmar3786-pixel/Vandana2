@@ -33,7 +33,9 @@ from backend.config import get_settings
 from backend.logging_config import get_logger, setup_logging
 from backend.memory.strategy_memory import StrategyMemory
 from backend.pipeline.orchestrator import TerminalEngine
-from backend.strategies.registry import get_meta, search_meta, all_meta
+from backend.strategies.registry import get_meta
+from backend.strategies.catalog import STRATEGY_REGISTRY, strategy_search
+from backend.ai.six_layer_ai import LAYERS
 
 log = get_logger("api")
 
@@ -177,9 +179,14 @@ async def api_decision(index: str) -> Dict[str, Any]:
 
 
 @app.get("/api/strategies")
-async def api_strategies(q: str = "", family: str = "", limit: int = 400) -> Dict[str, Any]:
-    metas = search_meta(q, family) if (q or family) else all_meta()
-    return {"count": len(metas), "strategies": [m.model_dump() for m in metas[:limit]]}
+async def api_strategies(q: str = "", family: str = "", limit: int = 377) -> Dict[str, Any]:
+    rows = strategy_search(q)
+    if family:
+        fl=family.strip().lower()
+        rows=[x for x in rows if fl in x.section.lower()]
+    rows=rows[:max(1,min(limit,377))]
+    return {"count":len(rows),"total_catalogue":377,
+            "strategies":[{"id":f"S{x.id:03d}","number":x.id,"name":x.name,"family":x.section,"advanced":False} for x in rows]}
 
 
 @app.get("/api/strategies/{sid}")
@@ -191,6 +198,22 @@ async def api_strategy(sid: str) -> Dict[str, Any]:
 
 
 # ----------------------------- orders -----------------------------
+
+@app.get("/api/ai/layers")
+async def api_ai_layers() -> Dict[str, Any]:
+    return {"count":len(LAYERS),"layers":[
+        {"id":x["id"],"name":x["name"],"role":x["role"],"web_search":x["web"]}
+        for x in LAYERS
+    ],"validation_only":True}
+
+@app.post("/api/ai/validate/{index}")
+async def api_ai_validate(index:str) -> Dict[str,Any]:
+    if state.engine is None:
+        raise HTTPException(503,"engine not ready")
+    try:
+        return await state.engine.ai_validate(index)
+    except Exception as e:
+        raise HTTPException(502,f"AI validation failed: {e}")
 
 @app.get("/api/angel/status")
 async def angel_status() -> Dict[str, Any]:
