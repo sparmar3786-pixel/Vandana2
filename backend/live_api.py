@@ -191,6 +191,7 @@ def _strip(o: Any) -> Any:
 
 
 class LoginIn(BaseModel):
+    api_key: Optional[str] = None
     client_id: Optional[str] = None
     pin: Optional[str] = None
     totp: Optional[str] = None
@@ -242,9 +243,12 @@ def build_router(get_engine: Callable[[], Any]) -> APIRouter:
         online()
         s, c = get_settings(), angel()
         cid, pin = b.client_id or s.angel_client_id, b.pin or s.angel_pin
+        api_key = (b.api_key or s.angel_api_key or "").strip()
         totp = b.totp or (c.generate_totp() if s.angel_totp_secret else "")
-        if not (s.angel_api_key and cid and pin and totp):
-            raise HTTPException(400, "need ANGEL_API_KEY on server + client_id, pin, totp (or ANGEL_TOTP_SECRET)")
+        if not (api_key and cid and pin and totp):
+            raise HTTPException(400, "need Angel One API key + client_id + PIN + TOTP")
+        if hasattr(c, "api_key_override"):
+            c.api_key_override = api_key
         try:
             d = (await c._post_raw("/rest/auth/angelbroking/user/v1/loginByPassword",
                                    {"clientcode": cid, "password": pin, "totp": totp}, authed=False)).get("data") or {}

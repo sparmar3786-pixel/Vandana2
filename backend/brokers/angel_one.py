@@ -43,8 +43,9 @@ class AngelOneClient(DataSource):
     capabilities=Capabilities(streaming=True,greeks=True,option_chain=True,historical=True,oi=True,volume=True,bid_ask=True,depth=True,trade_level=False)
     _index_spot_cache: Dict[str,float]={}
 
-    def __init__(self, *, price_scale: float=100.0) -> None:
+    def __init__(self, *, price_scale: float=100.0, api_key: Optional[str]=None) -> None:
         s=get_settings(); super().__init__(rps=s.rate_limit_rps); self.s=s; self.price_scale=price_scale
+        self.api_key_override=api_key.strip() if api_key else None
         self._limiter=_AsyncRateLimiter(s.rate_limit_rps); self.jwt=None; self.refresh_token=s.angel_refresh_token or None
         self.feed_token=None; self._session=requests.Session(); self._instruments=None; self._all_instruments=None; self._token_index={}; self._index_tokens={}; self._ws=None
 
@@ -55,7 +56,7 @@ class AngelOneClient(DataSource):
     def _base_headers(self)->Dict[str,str]:
         try: local_ip=socket.gethostbyname(socket.gethostname())
         except Exception: local_ip="127.0.0.1"
-        h={"Content-Type":"application/json","Accept":"application/json","X-UserType":"USER","X-SourceID":"WEB","X-ClientLocalIP":local_ip,"X-ClientPublicIP":local_ip,"X-MACAddress":"00:00:00:00:00:00","X-PrivateKey":self.s.angel_api_key}
+        h={"Content-Type":"application/json","Accept":"application/json","X-UserType":"USER","X-SourceID":"WEB","X-ClientLocalIP":local_ip,"X-ClientPublicIP":local_ip,"X-MACAddress":"00:00:00:00:00:00","X-PrivateKey":(self.api_key_override or self.s.angel_api_key)}
         if self.jwt: h["Authorization"]=f"Bearer {self.jwt}"
         return h
 
