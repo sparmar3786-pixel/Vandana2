@@ -99,10 +99,6 @@ class TerminalEngine:
             "decisions":{k:{"verdict":v.verdict.value,"plans":v.plans_qualifying,"suppressed":v.plans_suppressed} for k,v in self._decisions.items()},
         }
 
-    async def place_live_order(self,req:Dict[str,Any])->Dict[str,Any]:
-        logger.warning("engine: live order requested but not wired: {}",req)
-        return {"placed":False,"reason":"live order placement not wired for this adapter; implement broker order API before enabling"}
-
     async def run_strategy_scan(self,index:str)->Dict[str,Any]:
         decision=await self._cycle_for_index(index)
         if decision is None:return {"error":f"no decision for {index}"}
