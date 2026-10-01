@@ -148,6 +148,10 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   }
 
   Widget _login()=>Column(children:[
+    TextField(controller:backendController,decoration:const InputDecoration(labelText:'Backend URL',prefixIcon:Icon(Icons.link)),onChanged:(v)=>backendUrl=v),
+    const SizedBox(height:8),
+    _info('Backend URL is pre-filled with your Railway live backend. You can edit it when needed.',Icons.cloud),
+    const SizedBox(height:4),
     _info('Terminal API Key authenticates this APK to your backend.',Icons.vpn_key),
     TextField(controller:terminalApiKeyController,obscureText:!showTerminalApiKey,decoration:InputDecoration(labelText:'Terminal API Key',hintText:'Enter terminal key',prefixIcon:const Icon(Icons.key),suffixIcon:IconButton(tooltip:showTerminalApiKey?'Hide':'Show',onPressed:()=>setState(()=>showTerminalApiKey=!showTerminalApiKey),icon:Icon(showTerminalApiKey?Icons.visibility_off:Icons.visibility)))),
     const SizedBox(height:8),
