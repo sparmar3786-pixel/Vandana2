@@ -1,3 +1,4 @@
+import 'final_terminal_design.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -31,7 +32,7 @@ class AlgoApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     title: 'NSE Algo Signal',
     theme: ThemeData.dark(useMaterial3: true),
-    home: const Terminal(),
+    home: const FinalTerminalDesign(),
   );
 }
 
