@@ -192,7 +192,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     while(base.endsWith('/')) { base=base.substring(0,base.length-1); }
     if(base.isEmpty){return;}
     try{
-      final r=await http.get(Uri.parse('$base/api/live/ai/layers'),headers:_authHeaders()).timeout(const Duration(seconds:10));
+      final r=await http.get(Uri.parse('$base/api/ai/layers'),headers:_authHeaders()).timeout(const Duration(seconds:10));
       if(r.statusCode<300){
         final j=jsonDecode(r.body) as Map<String,dynamic>;
         setState(()=>aiLayers=(j['layers'] as List? ?? const[]).whereType<Map>().map((x)=>Map<String,dynamic>.from(x)).toList());
@@ -206,7 +206,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     if(base.isEmpty){setState(()=>aiStatus='Backend URL required');return;}
     setState(()=>aiStatus='Running six-layer validation…');
     try{
-      final r=await http.post(Uri.parse('${base}/api/live/ai/validate/${Uri.encodeComponent(_apiIndex(selectedIndex))}'),headers:_authHeaders()).timeout(const Duration(seconds:70));
+      final r=await http.post(Uri.parse('${base}/api/ai/validate/${Uri.encodeComponent(_apiIndex(selectedIndex))}'),headers:_authHeaders()).timeout(const Duration(seconds:70));
       final j=jsonDecode(r.body) as Map<String,dynamic>;
       final layers=(j['layers'] as List? ?? const[]).whereType<Map>().map((x)=>Map<String,dynamic>.from(x)).toList();
       setState(()=>aiStatus=r.statusCode<300
