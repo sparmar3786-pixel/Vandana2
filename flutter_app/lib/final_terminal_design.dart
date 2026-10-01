@@ -98,7 +98,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     _chips(['Option Chain','OI Lab','Signals','Portfolio','AI Validation']),_pipeline()]);
 
   Widget _market()=>Column(children:[_indexStrip(),...indices.map((x)=>_row(x,'—','Live feed required')),
-    _title('Market Breadth'),_grid([['Advances','32',''],['Declines','17',''],['Unchanged','1',''],['PCR','0.95','Neutral']])]);
+    _title('Market Breadth'),_grid([['Advances','—','Live'],['Declines','—','Live'],['Unchanged','—','Live'],['PCR','—','Live']])]);
 
   Widget _chain()=>Column(children:[
     _indexStrip(),_chips(['CE','PE','OI','Volume','Change OI']),
@@ -151,7 +151,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Widget _detail()=>Column(children:[_info('S006 • OI Wall Break',Icons.rule),_setting('Family','OI / Position'),_setting('Type','Signal + confirmation'),
     _setting('Evidence','OI concentration + acceptance + volume'),_setting('Backtest','Setup-specific history required'),_chips(['Watchlist','Compare','Backtest','Evidence'])]);
 
-  Widget _risk()=>Column(children:[_grid([['Max Risk / Trade','1.0%',''],['Max Total Risk','5.0%',''],['R:R Gate','PASS',''],['Spread','PASS',''],['Liquidity','PASS',''],['Gap Risk','PASS','']]),
+  Widget _risk()=>Column(children:[_grid([['Max Risk / Trade','Configured','Rule'],['Max Total Risk','Configured','Rule'],['R:R Gate','WAIT','Live'],['Spread','WAIT','Live'],['Liquidity','WAIT','Live'],['Gap Risk','WAIT','Live']]),
     _verdict('RISK GATE','Single deterministic gate controls entry eligibility.',const Color(0xff18a66a)),_chips(['Structure SL','Premium SL','ATR SL','Trailing','Break-even','Time Exit'])]);
 
   Widget _alerts()=>Column(children:[_info('No alerts until verified live data is received.',Icons.cloud_off)]);
@@ -159,7 +159,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Widget _education()=>Column(children:['How to read Option Chain','OI Classification — 4 Types','377 Strategy Registry','Risk / R:R Gate','AI Validation Guide','Data Quality / NO TRADE'].map((x)=>_row('Guide',x,'›')).toList());
 
   Widget _models()=>Column(children:[_setting('Provider','Puter.js • Zero Key'),_setting('Catalogue','Runtime listModels()'),
-    ...['GPT-5.6 Luna','Claude Sonnet 4.6','GPT-5.6 Sol','DeepSeek Chat','Gemini 2.5 Flash','Grok 4'].map((x)=>_row(x,'Available',''))]);
+    ...['GPT-5.6 Luna','Claude Sonnet 4.6','GPT-5.6 Sol','DeepSeek Chat','Gemini 2.5 Flash','Grok 4'].map((x)=>_row(x,'Runtime check',''))]);
 
   Widget _feed()=>Column(children:[_row('Angel One','Awaiting live connection','—'),_row('NSE Public','Standby','—'),_row('NSE MCP','Awaiting live source','—'),_grid([['Latency','—','Live'],['Freshness','—','Live'],['Gaps','—','Live'],['Sync','—','Live']])]);
 
@@ -199,7 +199,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Widget _dark()=>_themeCard(true);
   Widget _themeCard(bool dark)=>Card(color:dark?const Color(0xff0b1727):Colors.white,child:Padding(padding:const EdgeInsets.all(18),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Text('NSE-AI-TERMINAL',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900,color:dark?Colors.white:const Color(0xff132238))),
-    const SizedBox(height:12),Row(children:[Expanded(child:_preview('NIFTY 50','24,689.75','+0.51%')),const SizedBox(width:8),Expanded(child:_preview('PCR','0.95','Neutral'))]),
+    const SizedBox(height:12),Row(children:[Expanded(child:_preview('NIFTY 50','—','LIVE FEED')),const SizedBox(width:8),Expanded(child:_preview('PCR','—','LIVE FEED'))]),
     const SizedBox(height:12),Container(padding:const EdgeInsets.all(14),decoration:BoxDecoration(borderRadius:BorderRadius.circular(13),color:dark?const Color(0xff12233a):const Color(0xffedf5ff)),
       child:const Row(children:[Icon(Icons.pause_circle_outline,color:Colors.orange),SizedBox(width:8),Text('WAIT • No qualifying setup')]))])));
 
