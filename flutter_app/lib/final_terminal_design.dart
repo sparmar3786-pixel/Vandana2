@@ -106,7 +106,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       columns:const[DataColumn(label:Text('Strike')),DataColumn(label:Text('CE LTP')),DataColumn(label:Text('CE OI')),
         DataColumn(label:Text('PE LTP')),DataColumn(label:Text('PE OI')),DataColumn(label:Text('Chg OI'))],
       rows:List.generate(7,(i){return const DataRow(cells:[
-        DataCell(Text('—')),DataCell(Text('—')),DataCell(Text('—')),DataCell(Text('—')),DataCell(Text('—')),DataCell(Text('—'))]);}))),
+        DataCell(Text('—')),DataCell(Text('—')),DataCell(Text('—')),DataCell(Text('—')),DataCell(Text('—')),DataCell(Text('—'))]);})))),
     _info('Missing OI / volume / stale data => NO TRADE',Icons.shield)]);
 
   Widget _heatmap()=>Column(children:[_info('OI Heatmap will populate from the verified live option chain.',Icons.cloud_off),_chips(['OI Concentration','Migration','Wall Break','Wall Rebuild','OI Velocity'])]);
@@ -179,7 +179,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     ['235–246','Market Regime','Filter'],['247–260','Quant / Statistical','Indicator'],['261–274','Cross-Index / Breadth','Signal'],
     ['275–284','Fibonacci / Classical','Feature'],['285–305','Entry / Exit / Risk','Risk'],['306–317','Signal Intelligence','Filter'],
     ['318–332','Data / Reliability','Data Quality'],['333–354','Backtest / Validation','Backtest'],['355–367','AI / Strategy Discovery','AI'],
-    ['368–377','Final Decision','Decision']].map((x)=>_row(x[0],x[1],x[2])));
+    ['368–377','Final Decision','Decision']].map((x)=>_row(x[0],x[1],x[2])).toList());
 
   Widget _oi()=>Column(children:[
     _oiCard('LONG BUILDUP','Premium ↑ + OI ↑','New buying / bullish evidence',const Color(0xff18a66a),Icons.trending_up),
