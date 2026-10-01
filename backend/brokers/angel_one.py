@@ -46,7 +46,7 @@ class AngelOneClient(DataSource):
     def __init__(self, *, price_scale: float=100.0) -> None:
         s=get_settings(); super().__init__(rps=s.rate_limit_rps); self.s=s; self.price_scale=price_scale
         self._limiter=_AsyncRateLimiter(s.rate_limit_rps); self.jwt=None; self.refresh_token=s.angel_refresh_token or None
-        self.feed_token=None; self._session=requests.Session(); self._instruments=None; self._token_index={}; self._ws=None
+        self.feed_token=None; self._session=requests.Session(); self._instruments=None; self._all_instruments=None; self._token_index={}; self._index_tokens={}; self._ws=None
 
     def generate_totp(self)->str:
         if not self.s.angel_totp_secret: raise AuthError("ANGEL_TOTP_SECRET is not set")
@@ -140,14 +140,33 @@ class AngelOneClient(DataSource):
         def dl()->pd.DataFrame:
             r=requests.get(INSTRUMENT_MASTER_URL,timeout=60); r.raise_for_status(); return pd.DataFrame(r.json())
         df=await asyncio.to_thread(dl)
-        if "exch_seg" in df: df=df[df["exch_seg"].isin(["NFO","BFO"])]
-        self._instruments=df; idx={}
+        self._all_instruments=df
+        self._instruments=df[df["exch_seg"].isin(["NFO","BFO"])] if "exch_seg" in df else df; idx={}
+        index_tokens={}
         for _,row in df.iterrows():
             try:
                 name=str(row.get("name","")).upper(); exp=str(row.get("expiry","")).upper(); sym=str(row.get("symbol","")).upper(); token=str(row.get("token","")); strike=float(row.get("strike",0))/100; opt="CE" if sym.endswith("CE") else ("PE" if sym.endswith("PE") else "")
                 if opt: idx[(name,exp,strike,opt)]=token
             except Exception: continue
         self._token_index=idx
+        if self._all_instruments is not None:
+            for _,row in self._all_instruments.iterrows():
+                try:
+                    seg=str(row.get("exch_seg","")).upper()
+                    name=str(row.get("name","")).upper().replace(" ","")
+                    symbol=str(row.get("symbol","")).upper().replace(" ","")
+                    token=str(row.get("token",""))
+                    if seg in {"NSE","BSE"} and name in {x.replace(" ","") for x in INDEX_UNDERLYING.values()}:
+                        index_tokens[name]=(token,seg)
+                    elif seg in {"NSE","BSE"} and symbol in {"NIFTY50","NIFTY","BANKNIFTY","FINNIFTY","MIDCPNIFTY","SENSEX","BANKEX"}:
+                        index_tokens[symbol]=(token,seg)
+                except Exception: continue
+        self._index_tokens=index_tokens
+
+    async def get_index_token(self,index:str)->Optional[str]:
+        await self.load_instruments()
+        item=self._index_tokens.get(index.upper().replace(" ",""))
+        return item[0] if item else None
 
     def resolve_token(self,index:str,strike:float,option_type:str,expiry:str)->Optional[str]:
         return self._token_index.get((INDEX_UNDERLYING.get(index.upper(),index.upper()),expiry.upper(),float(strike),option_type.upper()))
