@@ -114,7 +114,49 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   String _apiIndex(String x)=>x.replaceAll(' ','')=='NIFTY50'?'NIFTY':x.replaceAll(' ','').toUpperCase();
 
   Future<void> _connectBackend() async {
-    final base=backendUrl.trim().replaceAll(RegExp(r'/
+    var base=backendUrl.trim();
+    while(base.endsWith('/')) base=base.substring(0,base.length-1);
+    if(base.isEmpty){setState(()=>apiStatus='Enter backend URL first');return;}
+    try{
+      final r=await http.post(Uri.parse(base+'/api/angel/connect')).timeout(const Duration(seconds:12));
+      final j=jsonDecode(r.body) as Map<String,dynamic>;
+      setState(()=>apiStatus=r.statusCode<300 && j['connected']==true?'Angel One connected':'Connection failed');
+      if(r.statusCode<300) await _loadCandles();
+    }catch(_){setState(()=>apiStatus='Backend connection failed');}
+  }
+
+  Future<void> _loadCandles() async {
+    var base=backendUrl.trim();
+    while(base.endsWith('/')) base=base.substring(0,base.length-1);
+    if(base.isEmpty)return;
+    try{
+      final url=base+'/api/candles/'+Uri.encodeComponent(_apiIndex(selectedIndex))+'?interval='+selectedTimeframe+'&days=5';
+      final r=await http.get(Uri.parse(url)).timeout(const Duration(seconds:15));
+      if(r.statusCode<300){
+        final j=jsonDecode(r.body) as Map<String,dynamic>;
+        final rows=(j['rows'] as List? ?? const[]);
+        setState(()=>candles=rows.whereType<Map>().map((x)=>Map<String,dynamic>.from(x)).toList());
+      }else{setState(()=>candles=[]);}
+    }catch(_){setState(()=>candles=[]);}
+  }
+
+  Future<void> _searchStrategies(String q) async {
+    var base=backendUrl.trim();
+    while(base.endsWith('/')) base=base.substring(0,base.length-1);
+    if(base.isEmpty){setState(()=>strategyResults=[]);return;}
+    try{
+      final url=base+'/api/strategies?q='+Uri.encodeQueryComponent(q)+'&limit=100';
+      final r=await http.get(Uri.parse(url)).timeout(const Duration(seconds:10));
+      if(r.statusCode<300){
+        final j=jsonDecode(r.body) as Map<String,dynamic>;
+        setState(()=>strategyResults=(j['strategies'] as List? ?? const[]).whereType<Map>().map((x)=>Map<String,dynamic>.from(x)).toList());
+      }
+    }catch(_){setState(()=>strategyResults=[]);}
+  }
+
+  void _toggleIndicator(String x)=>setState(()=>selectedIndicators.contains(x)?selectedIndicators.remove(x):selectedIndicators.add(x));
+
+  Widget _dashboard()=>Column(children:[
     _info('Live data connection required • no simulated market data',Icons.cloud_off),_indexStrip(),
     _grid([['CALL OI','—','Live'],['PUT OI','—','Live'],['PCR','—','Live'],['Regime','—','Live']]),
     _verdict('WAIT','Awaiting verified live market data',Colors.orange),
@@ -180,7 +222,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
           ChoiceChip(label:Text(x.value),selected:selectedTimeframe==x.key,onSelected:(v){if(v){setState(()=>selectedTimeframe=x.key);_loadCandles();}})
       ]),
       const SizedBox(height:8),
-      Wrap(spacing:5,runSpacing:5,children:['EMA 8','EMA 13','VWAP','RSI','MACD','ATR','Bollinger','WaveTrend','Supertrend','Pivot','CPR','Fibonacci'].map((x)=>FilterChip(label:Text(x),selected:selectedIndicators.contains(x),onSelected:(_)=>_toggleIndicator(x)).toList()),
+      Wrap(spacing:5,runSpacing:5,children:['EMA 8','EMA 13','VWAP','RSI','MACD','ATR','Bollinger','WaveTrend','Supertrend','Pivot','CPR','Fibonacci'].map((x)=>FilterChip(label:Text(x),selected:selectedIndicators.contains(x),onSelected:(_)=>_toggleIndicator(x))).toList(),
     ])),
     if(candles.isEmpty)_info('No verified live candles received yet.',Icons.cloud_off)
     else Card(child:SizedBox(height:280,child:CustomPaint(painter:LiveChartPainter(candles:candles,indicators:selectedIndicators),child:const SizedBox.expand()))),
