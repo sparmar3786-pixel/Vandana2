@@ -229,30 +229,33 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       .asMap().entries.map((e)=>_row('S${(e.key+1).toString().padLeft(3,'0')}',e.value,'OI / Position')),
     _info('Types: Signal • Indicator • Filter • Risk • Data • Backtest • AI • Decision',Icons.list_alt)]);
 
-  Widget _ai()=>Column(children:[
-    Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-      Row(children:[const Icon(Icons.auto_awesome),const SizedBox(width:8),const Expanded(child:Text('AI 6×6 VALIDATION MATRIX',style:TextStyle(fontWeight:FontWeight.w900))),
-        FilledButton.tonalIcon(onPressed:_runAiValidation,icon:const Icon(Icons.play_arrow),label:const Text('RUN'))]),
-      const SizedBox(height:6),Text(aiStatus,style:const TextStyle(fontSize:11)),
-    ]))),
-    ...((aiLayers.isEmpty
-      ? const [
-          {'id':'L1','name':'GPT-5.6 Luna','role':'data collection / candidate analysis'},
-          {'id':'L2','name':'Claude Sonnet 4.6','role':'data verification'},
-          {'id':'L3','name':'GPT-5.6 Sol','role':'independent validation'},
-          {'id':'L4','name':'DeepSeek Chat','role':'quantitative / OI audit'},
-          {'id':'L5','name':'Gemini 2.5 Flash','role':'market structure analysis'},
-          {'id':'L6','name':'Grok 4','role':'final risk audit / cross verification'},
-        ]
-      : aiLayers).map((x)=>Card(child:ListTile(
+  Widget _ai(){
+    final layers=<Map<String,dynamic>>[
+      if(aiLayers.isEmpty)...[
+        {'id':'L1','name':'GPT-5.6 Luna','role':'data collection / candidate analysis'},
+        {'id':'L2','name':'Claude Sonnet 4.6','role':'data verification'},
+        {'id':'L3','name':'GPT-5.6 Sol','role':'independent validation'},
+        {'id':'L4','name':'DeepSeek Chat','role':'quantitative / OI audit'},
+        {'id':'L5','name':'Gemini 2.5 Flash','role':'market structure analysis'},
+        {'id':'L6','name':'Grok 4','role':'final risk audit / cross verification'},
+      ] else ...aiLayers,
+    ];
+    return Column(children:[
+      Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Row(children:[const Icon(Icons.auto_awesome),const SizedBox(width:8),const Expanded(child:Text('AI 6×6 VALIDATION MATRIX',style:TextStyle(fontWeight:FontWeight.w900))),
+          FilledButton.tonalIcon(onPressed:_runAiValidation,icon:const Icon(Icons.play_arrow),label:const Text('RUN'))]),
+        const SizedBox(height:6),Text(aiStatus,style:const TextStyle(fontSize:11)),
+      ]))),
+      ...layers.map((x)=>Card(child:ListTile(
         leading:CircleAvatar(child:Text(x['id'].toString())),
         title:Text(x['name'].toString(),style:const TextStyle(fontWeight:FontWeight.w800)),
         subtitle:Text(x['role'].toString()),
         trailing:const Icon(Icons.verified_outlined),
-      )))),
-    _verdict('WAIT OVERRIDE','AI may downgrade; it never invents strike, entry, SL or target.',Colors.orange),
-    _info('Validation only. Confidence is not a win rate.',Icons.security)
-  ]);
+      ))),
+      _verdict('WAIT OVERRIDE','AI may downgrade; it never invents strike, entry, SL or target.',Colors.orange),
+      _info('Validation only. Confidence is not a win rate.',Icons.security)
+    ]);
+  }
 
   Widget _settings()=>Column(children:[_setting('Data source','Angel One → MCP → NSE public (verified live only)'),_setting('Advanced engine','Optional / gated'),
     _setting('AI','Puter.js validation-only'),_setting('Order placement','Not available in this APK'),_setting('Risk / R:R','Single gate'),
