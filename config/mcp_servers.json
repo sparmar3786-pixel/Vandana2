@@ -1,1 +1,21 @@
-{"servers":[],"paper_first":true,"live_orders_enabled":false}
+{
+  "servers": [
+    {
+      "name": "nse-local",
+      "enabled": true,
+      "transport": "stdio",
+      "command": "python",
+      "args": ["-m", "backend.mcp.nse_mcp_server", "--transport", "stdio"],
+      "timeout_sec": 20
+    },
+    {
+      "name": "nse-remote-sse",
+      "enabled": false,
+      "transport": "sse",
+      "url": "http://localhost:8765/sse",
+      "timeout_sec": 20
+    }
+  ],
+  "fallback_order": ["nse-local", "nse-remote-sse"],
+  "note": "Data-source fallback is Angel One -> MCP -> NSE public -> demo (see DATA_FALLBACK_ORDER)."
+}
