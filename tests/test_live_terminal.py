@@ -35,3 +35,11 @@ def test_terminal_login_has_editable_api_key_controls():
     assert 'id=lk type=password' in html
     assert 'Save / Update API Key' in html
     assert 'function toggleTerminalKey()' in html
+
+
+def test_angel_login_model_accepts_api_key():
+    from backend.live_api import LoginIn
+
+    payload = LoginIn(api_key="angel-key", client_id="client", pin="1234", totp="654321")
+    assert payload.api_key == "angel-key"
+    assert payload.client_id == "client"
