@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class FinalTerminalDesign extends StatefulWidget {
   const FinalTerminalDesign({super.key});
@@ -8,13 +10,22 @@ class FinalTerminalDesign extends StatefulWidget {
 class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   ThemeMode mode=ThemeMode.dark;
   int tab=2;
+  String backendUrl='';
+  String selectedIndex='NIFTY 50';
+  String selectedTimeframe='FIVE_MINUTE';
+  final Set<String> selectedIndicators={'EMA 8','EMA 13','VWAP','RSI','MACD','ATR','Bollinger'};
+  List<Map<String,dynamic>> candles=[];
+  List<Map<String,dynamic>> strategyResults=[];
+  String apiStatus='Backend URL required';
+  final TextEditingController backendController=TextEditingController();
   static const pages=<String>[
     'Launch','Login','Dashboard','Market Overview','Option Chain','OI Heatmap',
     'Premium / Volume','Greeks / IV','Order Flow','Market Regime','Trade Plans',
     'Backtest','Strategy Registry','AI 6-Layer','Logs / Settings','Portfolio',
     'Charts','Strategy Detail','Risk Management','Alerts','Education',
     'AI Model Selection','Data Feed Status','Backtest Settings','Research Modules',
-    '377 Classification','OI Classification','Final Verdict','Light Theme','Dark Theme'
+    '377 Classification','OI Classification','Final Verdict','Light Theme','Dark Theme',
+    'Search Engine','AI 6×6 Matrix','Angel One API'
   ];
   static const indices=['NIFTY 50','BANK NIFTY','FINNIFTY','MIDCPNIFTY','SENSEX','BANKEX'];
 
@@ -25,7 +36,14 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       appBar:AppBar(
         leading:IconButton(icon:const Icon(Icons.menu),onPressed:()=>Scaffold.of(context).openDrawer()),
         title:Row(children:[_logo(32),const SizedBox(width:8),const Expanded(child:Text('NSE-AI-TERMINAL'))]),
-        actions:[const Chip(label:Text('LIVE')),IconButton(
+        actions:[const Chip(label:Text('LIVE')),PopupMenuButton<String>(
+          onSelected:(v){setState(()=>tab=v=='ai'?31:v=='search'?30:v=='chart'?16:32);},
+          itemBuilder:(_)=>const[
+            PopupMenuItem(value:'ai',child:Text('AI 6×6 Matrix')),
+            PopupMenuItem(value:'search',child:Text('Search / Strategy Engine')),
+            PopupMenuItem(value:'chart',child:Text('Charts / Indicators')),
+            PopupMenuItem(value:'angel',child:Text('Angel One API'))]),
+        IconButton(
           onPressed:()=>setState(()=>mode=mode==ThemeMode.dark?ThemeMode.light:ThemeMode.dark),
           icon:Icon(mode==ThemeMode.dark?Icons.light_mode:Icons.dark_mode))]
       ),
@@ -65,13 +83,15 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     Icons.show_chart,Icons.functions,Icons.swap_vert,Icons.speed,Icons.bolt,Icons.history,Icons.view_list,
     Icons.auto_awesome,Icons.settings,Icons.account_balance_wallet,Icons.candlestick_chart,Icons.rule,
     Icons.shield,Icons.notifications,Icons.school,Icons.smart_toy,Icons.wifi_tethering,Icons.tune,
-    Icons.science,Icons.numbers,Icons.compare_arrows,Icons.gavel,Icons.light_mode,Icons.dark_mode];
+    Icons.science,Icons.numbers,Icons.compare_arrows,Icons.gavel,Icons.light_mode,Icons.dark_mode,
+    Icons.search,Icons.auto_awesome,Icons.link];
 
   Widget _page(int p){
     final b=<Widget Function()>[
       _launch,_login,_dashboard,_market,_chain,_heatmap,_premium,_greeks,_flow,_regime,
       _plans,_backtest,_registry,_ai,_settings,_portfolio,_charts,_detail,_risk,_alerts,
-      _education,_models,_feed,_btSettings,_research,_classification,_oi,_final,_light,_dark];
+      _education,_models,_feed,_btSettings,_research,_classification,_oi,_final,_light,_dark,
+      _search,_aiMatrix,_angelApi];
     return _shell(pages[p],b[p]());
   }
   Widget _shell(String title,Widget child)=>SafeArea(child:ListView(padding:const EdgeInsets.fromLTRB(13,10,13,24),children:[
