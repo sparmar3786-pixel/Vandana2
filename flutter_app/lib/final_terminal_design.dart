@@ -235,7 +235,14 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     _info('Live data connection required • no simulated market data',Icons.cloud_off),_indexStrip(),
     _grid([['CALL OI','—','Live'],['PUT OI','—','Live'],['PCR','—','Live'],['Regime','—','Live']]),
     _verdict('WAIT','Awaiting verified live market data',Colors.orange),
-    _chips(['Option Chain','OI Lab','Signals','Portfolio','AI Validation']),_pipeline()]);
+    _homeAiButtons([
+      ['Option Chain','Shows CE/PE strike, LTP, OI, change in OI and volume when verified live data is available.'],
+      ['OI Lab','Explains OI buildup, covering, unwinding, PCR, support and resistance from the live option chain.'],
+      ['Signals','Explains the qualified CALL/PUT signal pipeline and why a setup may remain WAIT or NO TRADE.'],
+      ['Portfolio','Explains positions, P&L, margin and account status; this APK does not place orders.'],
+      ['AI Validation','Explains the six-layer validation gate and its WAIT override without inventing market data.'],
+    ]),
+    _pipeline()]);
 
   Widget _market()=>Column(children:[_indexStrip(),...indices.map((x)=>_row(x,'—','Live feed required')),
     _title('Market Breadth'),_grid([['Advances','—','Live'],['Declines','—','Live'],['Unchanged','—','Live'],['PCR','—','Live']])]);
@@ -497,7 +504,49 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
 
   Widget _pipeline()=>Card(child:Padding(padding:const EdgeInsets.all(13),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     const Text('42-POINT PIPELINE',style:TextStyle(fontWeight:FontWeight.w900)),const SizedBox(height:8),
-    _chips(['Data','Quality','Regime','Price','Indicators','OI','Premium','Seller','CE/PE','Override','Strike','Risk','AI','Decision'])])));
+    _homeAiButtons([
+      ['Data','Explains whether the Home page is receiving verified market data or is still waiting for a live feed.'],
+      ['Quality','Explains freshness, missing fields and data-quality gates before a signal can qualify.'],
+      ['Regime','Explains trend, volatility, momentum and market-mode classification.'],
+      ['Price','Explains price structure and movement used by the decision pipeline.'],
+      ['Indicators','Explains EMA, VWAP, RSI, MACD, ATR and other configured indicators.'],
+      ['OI','Explains open-interest change and the four OI classifications.'],
+      ['Premium','Explains option premium movement and its relationship with price/OI evidence.'],
+      ['Seller','Explains seller/short-position evidence and short-covering confirmation.'],
+      ['CE/PE','Explains how CALL and PUT sides are evaluated separately.'],
+      ['Override','Explains deterministic safety/AI override conditions that can downgrade a setup.'],
+      ['Strike','Explains strike selection context around ATM and relevant OI concentration.'],
+      ['Risk','Explains stop-loss, risk/reward, liquidity and gap-risk gates.'],
+      ['AI','Explains the AI validation role; it does not guarantee a trade outcome.'],
+      ['Decision','Explains the final WAIT / NO TRADE / qualified output logic on this Home page.'],
+    ])])));
+
+  void _showHomeAiNotification(String label,String explanation){
+    if(!mounted)return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        duration:const Duration(seconds:6),
+        behavior:SnackBarBehavior.floating,
+        content:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
+          const Text('AI • Home page',style:TextStyle(fontWeight:FontWeight.w900)),
+          const SizedBox(height:3),
+          Text('$label: $explanation'),
+          const SizedBox(height:3),
+          const Text('Only this Home page • no navigation',style:TextStyle(fontSize:10)),
+        ]),
+        action:SnackBarAction(label:'CLOSE',onPressed:(){
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        }),
+      ));
+  }
+
+  Widget _homeAiButtons(List<List<String>> items)=>Wrap(
+    spacing:8,runSpacing:8,
+    children:items.map((item)=>OutlinedButton(
+      onPressed:()=>_showHomeAiNotification(item[0],item[1]),
+      child:Text(item[0]),
+    )).toList());
 
   Widget _indexStrip()=>SingleChildScrollView(scrollDirection:Axis.horizontal,child:Row(children:indices.map((x)=>Padding(padding:const EdgeInsets.only(right:6),child:ActionChip(label:Text(x),onPressed:()=>setState(()=>tab=3)))).toList()));
   Widget _grid(List<List<String>> a)=>GridView.count(crossAxisCount:2,shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),crossAxisSpacing:7,mainAxisSpacing:7,childAspectRatio:3,children:a.map((x)=>Card(child:Padding(padding:const EdgeInsets.all(9),child:Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[Text(x[0],style:const TextStyle(fontSize:11)),Text(x[1],style:const TextStyle(fontWeight:FontWeight.w800))])))).toList());
