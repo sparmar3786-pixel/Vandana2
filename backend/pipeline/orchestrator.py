@@ -1,19 +1,113 @@
-from dataclasses import dataclass
-from ..quality import data_quality
-from ..config import settings
-@dataclass
-class PipelineResult: plans:list; suppressed:list; quality:str; stages:list
-def classify(x):
- if x.oi_change>0 and x.ltp>0:return "LONG_BUILDUP"
- if x.oi_change<0 and x.ltp>0:return "SHORT_COVERING"
- return "NEUTRAL"
-def run_pipeline(s):
- ok,reason=data_quality(s,settings.max_snapshot_age_sec); stages=[f"part{i:02d}" for i in range(1,33)]
- if not ok:return PipelineResult([], [reason],"DATA_GAP",stages)
- plans=[];supp=[]
- for x in s.calls+s.puts:
-  if classify(x)=="NEUTRAL":supp.append(f"{x.side}{x.strike}: no qualifying state");continue
-  entry=x.ltp;sl=entry*(0.85 if "EXPIRY" in s.symbol.upper() else 0.75);target=entry+(entry-sl)*settings.min_rr;rr=(target-entry)/(entry-sl)
-  if rr<settings.min_rr:supp.append(f"{x.side}{x.strike}: R:R gate");continue
-  plans.append(type("P",(),{"side":"CE" if x.side.upper()=="CE" else "PE","strike":x.strike,"entry":entry,"stop_loss":sl,"targets":[target],"trailing_sl":"trail at 1R","time_exit":"15:15 IST","rr":rr,"position_size":1,"confidence":min(95,50+(10 if x.oi_change else 0)+(10 if x.volume else 0)),"strategy_ids":[]})())
- return PipelineResult(sorted(plans,key=lambda p:p.confidence,reverse=True),supp,"OK",stages)
+"""TerminalEngine — per-cycle 32-part pipeline orchestrator."""
+from __future__ import annotations
+import asyncio
+import inspect
+from collections import deque
+from datetime import datetime, timezone
+from typing import Any, Awaitable, Callable, Dict, Optional
+from loguru import logger
+from backend.config import get_settings
+from backend.models import Decision, Snapshot, Tick
+from backend.pipeline import loader  # noqa: F401
+from backend.pipeline.base import REGISTRY
+from backend.pipeline.context import PipelineContext
+
+CYCLE_SECONDS = 3.0
+Broadcast = Callable[[str, Any], Awaitable[None]]
+
+class TerminalEngine:
+    def __init__(self, memory=None, broadcaster: Optional[Broadcast]=None) -> None:
+        self.settings=get_settings(); self.memory=memory; self.broadcaster=broadcaster
+        self._source=None; self._ai=None; self._running=False
+        self._snapshots: Dict[str,Snapshot]={}; self._decisions: Dict[str,Decision]={}
+        self._prev_snapshots: Dict[str,Snapshot]={}
+        self._ticks={i:deque(maxlen=500) for i in self.settings.index_list}
+        self._last_bias: Dict[str,float]={}; self._cycle=0
+
+    async def start(self)->None:
+        from backend.brokers.factory import get_data_source
+        self._source=get_data_source()
+        try: await self._source.connect()
+        except Exception as e:
+            logger.error("engine: primary source connect failed ({}); demo fallback",e)
+            from backend.brokers.demo import DemoSource
+            self._source=DemoSource(); await self._source.connect()
+        if self.settings.ai_on:
+            from backend.ai.six_layer_ai import build_ai_client
+            self._ai=build_ai_client(self.settings)
+        self._running=True
+        logger.info("engine: started (source={}, indices={})",getattr(self._source,"name","?"),self.settings.index_list)
+
+    async def stop(self)->None:
+        self._running=False
+        if self._source is not None:
+            try: await self._source.close()
+            except Exception: pass
+
+    async def run_forever(self)->None:
+        await self.start()
+        while self._running:
+            try: await self.run_cycle()
+            except Exception as e: logger.exception("engine: cycle error: {}",e)
+            await asyncio.sleep(CYCLE_SECONDS)
+
+    async def run_cycle(self)->None:
+        self._cycle+=1
+        for index in self.settings.index_list:
+            try:
+                decision=await self._cycle_for_index(index)
+                if decision is not None:
+                    self._decisions[index]=decision
+                    if self.broadcaster:
+                        await self.broadcaster("decision",decision.model_dump(mode="json"))
+            except Exception as e:
+                logger.warning("engine: {} cycle failed: {}",index,e)
+        if self.broadcaster: await self.broadcaster("state",self.state_frame())
+
+    async def _cycle_for_index(self,index:str)->Optional[Decision]:
+        assert self._source is not None
+        snapshot=await self._source.get_option_chain(index)
+        if snapshot is None:return None
+        snapshot.data_quality=None
+        self._snapshots[index]=snapshot
+        try:
+            tick=await self._source.get_quote(index,token=index)
+            if tick is not None:self._ticks[index].append(tick)
+        except Exception: pass
+        ctx=PipelineContext(index=index,snapshot=snapshot,settings=self.settings,
+                            ticks=deque(self._ticks[index],maxlen=500),
+                            prev_snapshot=self._prev_snapshots.get(index))
+        ctx.put("_memory",self.memory); ctx.put("_ai",self._ai)
+        ctx.put("cross_index",dict(self._last_bias))
+        for part in sorted(REGISTRY):
+            fn=REGISTRY[part]; res=fn(ctx)
+            if inspect.isawaitable(res):res=await res
+            ctx.results.append(res)
+        self._prev_snapshots[index]=snapshot
+        self._last_bias[index]=(ctx.get("oi") or {}).get("bias",0.0)
+        return ctx.get("decision")
+
+    def latest_snapshot(self,index:str)->Optional[Snapshot]:
+        return self._snapshots.get(index.upper())
+
+    def latest_decision(self,index:str)->Optional[Decision]:
+        return self._decisions.get(index.upper())
+
+    def state_frame(self)->Dict[str,Any]:
+        return {
+            "cycle":self._cycle,
+            "timestamp":datetime.now(timezone.utc).isoformat(),
+            "source":getattr(self._source,"name","none"),
+            "advanced":self.settings.advanced_enabled,
+            "snapshots":{k:{"spot":v.spot,"atm":v.atm_strike,"expiry":v.expiry,"strikes":len(v.strikes),"source":v.source} for k,v in self._snapshots.items()},
+            "decisions":{k:{"verdict":v.verdict.value,"plans":v.plans_qualifying,"suppressed":v.plans_suppressed} for k,v in self._decisions.items()},
+        }
+
+    async def place_live_order(self,req:Dict[str,Any])->Dict[str,Any]:
+        logger.warning("engine: live order requested but not wired: {}",req)
+        return {"placed":False,"reason":"live order placement not wired for this adapter; implement broker order API before enabling"}
+
+    async def run_strategy_scan(self,index:str)->Dict[str,Any]:
+        decision=await self._cycle_for_index(index)
+        if decision is None:return {"error":f"no decision for {index}"}
+        return decision.model_dump(mode="json")
