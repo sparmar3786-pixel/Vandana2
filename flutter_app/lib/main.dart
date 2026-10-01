@@ -233,7 +233,6 @@ class _TerminalState extends State<Terminal> {
       if(indexMatches(name,s)){hit=q;break;}
     }
     if(hit!=null){await openQuoteChart(hit);return;}
-    await ;
     for(final q in liveMarket){
       final s=(q['tradingSymbol']??q['tradingsymbol']??q['symbol']??q['indexName']??'').toString();
       if(indexMatches(name,s)){await openQuoteChart(q);return;}
@@ -248,7 +247,6 @@ class _TerminalState extends State<Terminal> {
     selectedChartToken=token;
     selectedChartExchange=(q['exchange']??'NSE').toString();
     setState(()=>selected=7);
-    await ;
   }
 
 
@@ -258,7 +256,6 @@ class _TerminalState extends State<Terminal> {
     if(token.isEmpty)return;
     selectedChartToken=token; selectedChartExchange=exchange;
     setState(()=>selected=7);
-    await ;
   }
 
 
