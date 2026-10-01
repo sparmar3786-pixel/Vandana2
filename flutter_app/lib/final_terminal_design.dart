@@ -21,6 +21,12 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   String chartSection='Indices';
   String apiStatus='Backend URL required';
   final TextEditingController backendController=TextEditingController();
+  final TextEditingController terminalApiKeyController=TextEditingController();
+  final TextEditingController clientIdController=TextEditingController();
+  final TextEditingController pinController=TextEditingController();
+  final TextEditingController totpController=TextEditingController();
+  bool showTerminalApiKey=false;
+  String loginStatus='';
   // 30-screen reference layout from the supplied NSE-AI-TERMINAL design.
   // Core live-data screens are preserved; no order-placement screen is exposed.
   static const pages=<String>[
@@ -105,13 +111,52 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     FilledButton.icon(onPressed:()=>setState(()=>tab=2),icon:const Icon(Icons.play_arrow),label:const Text('GET STARTED')),
     const SizedBox(height:10),const Text('LIVE DATA ONLY • CONNECTION REQUIRED')]);
 
+  Map<String,String> _authHeaders({bool jsonBody=false}){
+    final h=<String,String>{};
+    final key=terminalApiKeyController.text.trim();
+    if(key.isNotEmpty) h['X-API-Key']=key;
+    if(jsonBody) h['Content-Type']='application/json';
+    return h;
+  }
+
+  Future<void> _loginAngel() async {
+    var base=backendUrl.trim();
+    while(base.endsWith('/')) { base=base.substring(0,base.length-1); }
+    if(base.isEmpty){setState(()=>loginStatus='Backend URL required. Open Angel One API and set it first.');return;}
+    if(terminalApiKeyController.text.trim().isEmpty){setState(()=>loginStatus='Terminal API Key required.');return;}
+    setState(()=>loginStatus='Connecting to Angel One…');
+    try{
+      final r=await http.post(
+        Uri.parse('$base/api/live/angel/login'),
+        headers:_authHeaders(jsonBody:true),
+        body:jsonEncode({
+          'client_id':clientIdController.text.trim().isEmpty?null:clientIdController.text.trim(),
+          'pin':pinController.text.trim().isEmpty?null:pinController.text.trim(),
+          'totp':totpController.text.trim().isEmpty?null:totpController.text.trim(),
+        }),
+      ).timeout(const Duration(seconds:20));
+      final j=jsonDecode(r.body);
+      if(r.statusCode<300 && j is Map && j['connected']==true){
+        setState(()=>loginStatus='Angel One connected • JWT/feed token received');
+      }else{
+        setState(()=>loginStatus='Login failed: '+(j is Map && j['detail']!=null?j['detail'].toString():r.body));
+      }
+    }catch(e){setState(()=>loginStatus='Connection failed: '+e.runtimeType.toString());}
+  }
+
   Widget _login()=>Column(children:[
-    _info('Angel One credentials stay server-side',Icons.lock),
-    const TextField(decoration:InputDecoration(labelText:'Client ID',prefixIcon:Icon(Icons.person))),
-    const SizedBox(height:8),const TextField(obscureText:true,decoration:InputDecoration(labelText:'PIN',prefixIcon:Icon(Icons.password))),
-    const SizedBox(height:8),const TextField(decoration:InputDecoration(labelText:'TOTP',prefixIcon:Icon(Icons.verified_user))),
-    const SizedBox(height:10),FilledButton(onPressed:()=>setState(()=>tab=2),child:const Text('CONNECT')),
-    const SizedBox.shrink()]);
+    _info('Terminal API Key is editable here • sent as X-API-Key to your backend.',Icons.vpn_key),
+    TextField(controller:terminalApiKeyController,obscureText:!showTerminalApiKey,decoration:InputDecoration(labelText:'Terminal API Key',hintText:'Enter API key',prefixIcon:const Icon(Icons.key),suffixIcon:IconButton(tooltip:showTerminalApiKey?'Hide':'Show',onPressed:()=>setState(()=>showTerminalApiKey=!showTerminalApiKey),icon:Icon(showTerminalApiKey?Icons.visibility_off:Icons.visibility)))),
+    const SizedBox(height:8),
+    TextField(controller:clientIdController,decoration:const InputDecoration(labelText:'Client ID',prefixIcon:Icon(Icons.person))),
+    const SizedBox(height:8),
+    TextField(controller:pinController,obscureText:true,decoration:const InputDecoration(labelText:'PIN',prefixIcon:Icon(Icons.password))),
+    const SizedBox(height:8),
+    TextField(controller:totpController,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'TOTP',prefixIcon:Icon(Icons.verified_user))),
+    const SizedBox(height:10),
+    FilledButton.icon(onPressed:_loginAngel,icon:const Icon(Icons.login),label:const Text('CONNECT')),
+    if(loginStatus.isNotEmpty) Padding(padding:const EdgeInsets.only(top:8),child:Text(loginStatus)),
+  ]);
 
   String _apiIndex(String x)=>x.replaceAll(' ','')=='NIFTY50'?'NIFTY':x.replaceAll(' ','').toUpperCase();
 
@@ -120,7 +165,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     while(base.endsWith('/')) { base=base.substring(0,base.length-1); }
     if(base.isEmpty){setState(()=>apiStatus='Enter backend URL first');return;}
     try{
-      final r=await http.post(Uri.parse('$base/api/angel/connect')).timeout(const Duration(seconds:12));
+      final r=await http.post(Uri.parse('$base/api/live/angel/token'),headers:_authHeaders()).timeout(const Duration(seconds:12));
       final j=jsonDecode(r.body) as Map<String,dynamic>;
       setState(()=>apiStatus=r.statusCode<300 && j['connected']==true?'Angel One connected':'Connection failed');
       if(r.statusCode<300){await _loadCandles(); await _loadAiLayers();}
@@ -133,7 +178,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     if(base.isEmpty){return;}
     try{
       final url='$base/api/candles/${Uri.encodeComponent(_apiIndex(selectedIndex))}?interval=$selectedTimeframe&days=5';
-      final r=await http.get(Uri.parse(url)).timeout(const Duration(seconds:15));
+      final r=await http.get(Uri.parse(url),headers:_authHeaders()).timeout(const Duration(seconds:15));
       if(r.statusCode<300){
         final j=jsonDecode(r.body) as Map<String,dynamic>;
         final rows=(j['rows'] as List? ?? const[]);
@@ -147,7 +192,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     while(base.endsWith('/')) { base=base.substring(0,base.length-1); }
     if(base.isEmpty){return;}
     try{
-      final r=await http.get(Uri.parse('$base/api/ai/layers')).timeout(const Duration(seconds:10));
+      final r=await http.get(Uri.parse('$base/api/live/ai/layers'),headers:_authHeaders()).timeout(const Duration(seconds:10));
       if(r.statusCode<300){
         final j=jsonDecode(r.body) as Map<String,dynamic>;
         setState(()=>aiLayers=(j['layers'] as List? ?? const[]).whereType<Map>().map((x)=>Map<String,dynamic>.from(x)).toList());
@@ -161,7 +206,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     if(base.isEmpty){setState(()=>aiStatus='Backend URL required');return;}
     setState(()=>aiStatus='Running six-layer validation…');
     try{
-      final r=await http.post(Uri.parse('${base}/api/ai/validate/${Uri.encodeComponent(_apiIndex(selectedIndex))}')).timeout(const Duration(seconds:70));
+      final r=await http.post(Uri.parse('${base}/api/live/ai/validate/${Uri.encodeComponent(_apiIndex(selectedIndex))}'),headers:_authHeaders()).timeout(const Duration(seconds:70));
       final j=jsonDecode(r.body) as Map<String,dynamic>;
       final layers=(j['layers'] as List? ?? const[]).whereType<Map>().map((x)=>Map<String,dynamic>.from(x)).toList();
       setState(()=>aiStatus=r.statusCode<300
@@ -176,7 +221,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     if(base.isEmpty){setState(()=>strategyResults=[]);return;}
     try{
       final url='$base/api/strategies?q=${Uri.encodeQueryComponent(q)}&limit=100';
-      final r=await http.get(Uri.parse(url)).timeout(const Duration(seconds:10));
+      final r=await http.get(Uri.parse(url),headers:_authHeaders()).timeout(const Duration(seconds:10));
       if(r.statusCode<300){
         final j=jsonDecode(r.body) as Map<String,dynamic>;
         setState(()=>strategyResults=(j['strategies'] as List? ?? const[]).whereType<Map>().map((x)=>Map<String,dynamic>.from(x)).toList());
