@@ -1,3 +1,4 @@
+# Point 6: repository hygiene and secret/data protection.
 # python
 __pycache__/
 *.py[cod]
