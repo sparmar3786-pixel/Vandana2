@@ -27,11 +27,7 @@ class TerminalEngine:
     async def start(self)->None:
         from backend.brokers.factory import get_data_source
         self._source=get_data_source()
-        try: await self._source.connect()
-        except Exception as e:
-            logger.error("engine: primary source connect failed ({}); demo fallback",e)
-            from backend.brokers.demo import DemoSource
-            self._source=DemoSource(); await self._source.connect()
+        await self._source.connect()
         if self.settings.ai_on:
             from backend.ai.six_layer_ai import build_ai_client
             self._ai=build_ai_client(self.settings)
