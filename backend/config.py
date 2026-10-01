@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     )
 
     # ---------------- data source ----------------
-    data_source: str = "demo"
-    data_fallback_order: str = "angel_one,mcp,nse_public,demo"
+    data_source: str = "angel_one"
+    data_fallback_order: str = "angel_one"
 
     # ---------------- Angel One SmartAPI ----------------
     angel_api_key: str = ""
