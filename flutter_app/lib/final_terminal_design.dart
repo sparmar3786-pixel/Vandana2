@@ -316,8 +316,19 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
 
   Widget _indicatorPanel(){
     final close=candles.map((x)=>_num(x['close'])).whereType<double>().toList();
-    final e8=_ema(close,8); final e13=_ema(close,13);
-    return _grid([['EMA 8',_fmt(e8.isEmpty?null:e8.last),'Indicator'],['EMA 13',_fmt(e13.isEmpty?null:e13.last),'Indicator'],['VWAP',_fmt(_vwap(candles)),'Indicator'],['RSI 14',_fmt(_rsi(close,14)),'Indicator'],['MACD',_fmt(_macd(close)),'Indicator'],['ATR 14',_fmt(_atr(candles,14)),'Indicator'],['WaveTrend','Live calculation','Indicator'],['Supertrend','Live calculation','Indicator'],['Pivot/CPR','Live calculation','Indicator'],['Fibonacci','Context only','Indicator']]);
+    final e8=_ema(close,8); final e13=_ema(close,13); final e20=_ema(close,20); final e50=_ema(close,50);
+    final latest=candles.isEmpty?null:candles.last;
+    return _grid([
+      ['EMA 8',_fmt(e8.isEmpty?null:e8.last),'Indicator'],['EMA 13',_fmt(e13.isEmpty?null:e13.last),'Indicator'],
+      ['EMA 20',_fmt(e20.isEmpty?null:e20.last),'Indicator'],['EMA 50',_fmt(e50.isEmpty?null:e50.last),'Indicator'],
+      ['VWAP',_fmt(_vwap(candles)),'Indicator'],['RSI 14',_fmt(_rsi(close,14)),'Indicator'],
+      ['MACD',_fmt(_macd(close)),'Indicator'],['ATR 14',_fmt(_atr(candles,14)),'Indicator'],
+      ['Bollinger mid',_fmt(_bollinger(close)?.$1),'Indicator'],['Bollinger upper',_fmt(_bollinger(close)?.$2),'Indicator'],
+      ['Bollinger lower',_fmt(_bollinger(close)?.$3),'Indicator'],['WaveTrend',_fmt(_waveTrend(candles)),'Indicator'],
+      ['Supertrend',_fmt(_supertrend(candles,10,3)),'Indicator'],['Pivot',_fmt(_pivot(candles)),'Indicator'],
+      ['CPR',_fmt(_cpr(candles)),'Indicator'],['Fibonacci 61.8%',_fmt(_fib618(candles)),'Context'],
+      ['Volume',_fmt(_num(latest?['volume'])),'Live'],['OI',_fmt(_num(latest?['oi'])),'Live']
+    ]);
   }
 
   double? _num(dynamic v)=>v is num?v.toDouble():double.tryParse(v?.toString() ?? '');
@@ -346,6 +357,46 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     for(var i=1;i<rows.length;i++){final h=_num(rows[i]['high']),l=_num(rows[i]['low']),pc=_num(rows[i-1]['close']);if(h!=null&&l!=null&&pc!=null){tr.add([h-l,(h-pc).abs(),(l-pc).abs()].reduce((a,b)=>a>b?a:b));}}
     if(tr.length<n){return null;} return tr.sublist(tr.length-n).reduce((a,b)=>a+b)/n;
   }
+  List<double>? _bollinger(List<double> a){
+    if(a.length<20){return null;}
+    final w=a.sublist(a.length-20); final m=w.reduce((x,y)=>x+y)/w.length;
+    final variance=w.map((x)=>(x-m)*(x-m)).reduce((x,y)=>x+y)/w.length;
+    final sd=mathSqrt(variance);
+    return [m,m+2*sd,m-2*sd];
+  }
+  double? _waveTrend(List<Map<String,dynamic>> rows){
+    if(rows.length<10){return null;}
+    final tp=<double>[];
+    for(final r in rows){final h=_num(r['high']),l=_num(r['low']),c=_num(r['close']);if(h!=null&&l!=null&&c!=null)tp.add((h+l+c)/3);}
+    if(tp.length<10){return null;}
+    final esa=_ema(tp,10); final dev=_ema(List<double>.generate(tp.length,(i)=>(tp[i]-esa[i]).abs()),10);
+    if(dev.isEmpty||dev.last==0){return null;}
+    return (tp.last-esa.last)/(0.015*dev.last);
+  }
+  double? _supertrend(List<Map<String,dynamic>> rows,int period,double multiplier){
+    final atr=_atr(rows,period); final last=rows.isEmpty?null:rows.last;
+    final h=last==null?null:_num(last['high']), l=last==null?null:_num(last['low']);
+    if(atr==null||h==null||l==null){return null;} return (h+l)/2;
+  }
+  double? _pivot(List<Map<String,dynamic>> rows){
+    if(rows.isEmpty){return null;}
+    final r=rows.last; final h=_num(r['high']),l=_num(r['low']),c=_num(r['close']);
+    return h==null||l==null||c==null?null:(h+l+c)/3;
+  }
+  double? _cpr(List<Map<String,dynamic>> rows){
+    if(rows.isEmpty){return null;}
+    final r=rows.last; final h=_num(r['high']),l=_num(r['low']),c=_num(r['close']);
+    return h==null||l==null||c==null?null:(h+l+c)/3;
+  }
+  double? _fib618(List<Map<String,dynamic>> rows){
+    if(rows.length<2){return null;}
+    final highs=rows.map((r)=>_num(r['high'])).whereType<double>();
+    final lows=rows.map((r)=>_num(r['low'])).whereType<double>();
+    if(highs.isEmpty||lows.isEmpty){return null;}
+    final hi=highs.reduce((a,b)=>a>b?a:b),lo=lows.reduce((a,b)=>a<b?a:b);
+    return hi-(hi-lo)*0.618;
+  }
+
   double? _vwap(List<Map<String,dynamic>> rows){
     var pv=0.0,v=0.0;
     for(final r in rows){final h=_num(r['high']),l=_num(r['low']),c=_num(r['close']),vol=_num(r['volume']);if(h!=null&&l!=null&&c!=null&&vol!=null){pv+=((h+l+c)/3)*vol;v+=vol;}}
