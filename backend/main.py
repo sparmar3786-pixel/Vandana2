@@ -238,11 +238,26 @@ async def api_candles(index:str, interval:str="FIVE_MINUTE", days:int=5) -> Dict
     token=await source.get_index_token(index)
     if not token: raise HTTPException(404,f"index token not found for {index}")
     from datetime import datetime,timedelta,timezone
+    import pandas as pd
+    requested=interval.upper()
+    native={"ONE_MINUTE":"ONE_MINUTE","THREE_MINUTE":"THREE_MINUTE","FIVE_MINUTE":"FIVE_MINUTE",
+            "TEN_MINUTE":"TEN_MINUTE","FIFTEEN_MINUTE":"FIFTEEN_MINUTE","THIRTY_MINUTE":"THIRTY_MINUTE",
+            "ONE_HOUR":"ONE_HOUR","ONE_DAY":"ONE_DAY"}
+    resample={"TWO_MINUTE":("ONE_MINUTE","2min"),"TWO_HOUR":("ONE_HOUR","2h"),"FOUR_HOUR":("ONE_HOUR","4h")}
+    source_interval,rule=resample.get(requested,(native.get(requested,"FIVE_MINUTE"),None))
     now=datetime.now(timezone.utc).astimezone(); frm=now-timedelta(days=max(1,min(days,30)))
     exchange="BSE" if index.upper().replace(" ","") in {"SENSEX","BANKEX"} else "NSE"
-    df=await source.get_historical(token,exchange,interval,frm,now)
+    df=await source.get_historical(token,exchange,source_interval,frm,now)
+    if rule and not df.empty:
+        df=df.copy()
+        df["timestamp"]=pd.to_datetime(df["timestamp"],errors="coerce")
+        df=df.dropna(subset=["timestamp"]).set_index("timestamp")
+        for col in ("open","high","low","close","volume"):
+            if col in df: df[col]=pd.to_numeric(df[col],errors="coerce")
+        agg={"open":"first","high":"max","low":"min","close":"last","volume":"sum"}
+        df=df.resample(rule).agg({k:v for k,v in agg.items() if k in df.columns}).dropna(subset=["close"]).reset_index()
     rows=[] if df.empty else df.where(df.notna(),None).to_dict(orient="records")
-    return {"index":index.upper(),"interval":interval,"rows":rows,"source":getattr(source,"name","angel_one"),"live_data_only":True}
+    return {"index":index.upper(),"interval":requested,"rows":rows,"source":getattr(source,"name","angel_one"),"live_data_only":True}
 
 # ----------------------------- WS -----------------------------
 
