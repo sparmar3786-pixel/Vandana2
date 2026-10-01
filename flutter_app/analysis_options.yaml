@@ -1,0 +1,16 @@
+# Keep real analyzer errors fatal while preventing style-only lint noise from blocking APK builds.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    prefer_interpolation_to_compose_strings: ignore
+    curly_braces_in_flow_control_structures: ignore
+    deprecated_member_use: info
+    unused_element: info
+    unused_local_variable: info
+    unused_import: info
+
+linter:
+  rules:
+    prefer_interpolation_to_compose_strings: false
+    curly_braces_in_flow_control_structures: false
