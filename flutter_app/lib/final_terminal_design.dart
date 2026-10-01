@@ -229,10 +229,30 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       .asMap().entries.map((e)=>_row('S${(e.key+1).toString().padLeft(3,'0')}',e.value,'OI / Position')),
     _info('Types: Signal • Indicator • Filter • Risk • Data • Backtest • AI • Decision',Icons.list_alt)]);
 
-  Widget _ai()=>Column(children:[...['L1 • GPT-5.6 Luna','L2 • Claude Sonnet 4.6','L3 • GPT-5.6 Sol','L4 • DeepSeek Chat','L5 • Gemini 2.5 Flash','L6 • Grok 4']
-      .map((x)=>_row(x,'AGREE','Validation only')),
+  Widget _ai()=>Column(children:[
+    Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Row(children:[const Icon(Icons.auto_awesome),const SizedBox(width:8),const Expanded(child:Text('AI 6×6 VALIDATION MATRIX',style:TextStyle(fontWeight:FontWeight.w900))),
+        FilledButton.tonalIcon(onPressed:_runAiValidation,icon:const Icon(Icons.play_arrow),label:const Text('RUN'))]),
+      const SizedBox(height:6),Text(aiStatus,style:const TextStyle(fontSize:11)),
+    ]))),
+    ...((aiLayers.isEmpty
+      ? const [
+          {'id':'L1','name':'GPT-5.6 Luna','role':'data collection / candidate analysis'},
+          {'id':'L2','name':'Claude Sonnet 4.6','role':'data verification'},
+          {'id':'L3','name':'GPT-5.6 Sol','role':'independent validation'},
+          {'id':'L4','name':'DeepSeek Chat','role':'quantitative / OI audit'},
+          {'id':'L5','name':'Gemini 2.5 Flash','role':'market structure analysis'},
+          {'id':'L6','name':'Grok 4','role':'final risk audit / cross verification'},
+        ]
+      : aiLayers).map((x)=>Card(child:ListTile(
+        leading:CircleAvatar(child:Text(x['id'].toString())),
+        title:Text(x['name'].toString(),style:const TextStyle(fontWeight:FontWeight.w800)),
+        subtitle:Text(x['role'].toString()),
+        trailing:const Icon(Icons.verified_outlined),
+      )))),
     _verdict('WAIT OVERRIDE','AI may downgrade; it never invents strike, entry, SL or target.',Colors.orange),
-    _info('Puter.js listModels() is checked at runtime.',Icons.auto_awesome)]);
+    _info('Validation only. Confidence is not a win rate.',Icons.security)
+  ]);
 
   Widget _settings()=>Column(children:[_setting('Data source','Angel One → MCP → NSE public (verified live only)'),_setting('Advanced engine','Optional / gated'),
     _setting('AI','Puter.js validation-only'),_setting('Order placement','Not available in this APK'),_setting('Risk / R:R','Single gate'),
@@ -241,23 +261,33 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Widget _portfolio()=>Column(children:[_info('Live portfolio data is unavailable until an authenticated live account/feed is connected.',Icons.cloud_off),_grid([['Positions','—','Live'],['P&L','—','Live'],['Margin','—','Live'],['Orders','—','Live']]),_chips(['Trade History','Account Status'])]);
 
   Widget _charts()=>Column(children:[
-    _indexStrip(),
-    Card(child:Padding(padding:const EdgeInsets.all(10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-      const Text('INDICES • LIVE CHART',style:TextStyle(fontWeight:FontWeight.w900)),
-      const SizedBox(height:8),
-      Wrap(spacing:5,runSpacing:5,children:indices.map((x)=>ChoiceChip(label:Text(x),selected:selectedIndex==x,onSelected:(v){if(v){setState(()=>selectedIndex=x);_loadCandles();}})).toList()),
-      const SizedBox(height:8),
-      Wrap(spacing:5,children:[
-        for(final x in const {'ONE_MINUTE':'1m','THREE_MINUTE':'3m','FIVE_MINUTE':'5m','TEN_MINUTE':'10m','FIFTEEN_MINUTE':'15m','THIRTY_MINUTE':'30m','ONE_HOUR':'1H','ONE_DAY':'1D'}.entries)
-          ChoiceChip(label:Text(x.value),selected:selectedTimeframe==x.key,onSelected:(v){if(v){setState(()=>selectedTimeframe=x.key);_loadCandles();}})
-      ]),
-      const SizedBox(height:8),
-      Wrap(spacing:5,runSpacing:5,children:['EMA 8','EMA 13','VWAP','RSI','MACD','ATR','Bollinger','WaveTrend','Supertrend','Pivot','CPR','Fibonacci'].map((x)=>FilterChip(label:Text(x),selected:selectedIndicators.contains(x),onSelected:(_)=>_toggleIndicator(x))).toList()),
+    Card(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[
+      Expanded(child:ChoiceChip(label:const Text('INDICES'),selected:chartSection=='Indices',onSelected:(_){setState(()=>chartSection='Indices');})),
+      const SizedBox(width:8),
+      Expanded(child:ChoiceChip(label:const Text('OPTIONS'),selected:chartSection=='Options',onSelected:(_){setState(()=>chartSection='Options');})),
     ]))),
-    if(candles.isEmpty) _info('No verified live candles received yet.',Icons.cloud_off)
-    else Card(child:SizedBox(height:280,child:CustomPaint(painter:LiveChartPainter(candles:candles,indicators:selectedIndicators),child:const SizedBox.expand()))),
-    if(candles.isNotEmpty)_indicatorPanel(),
-    _info('Angel One Historical API supports 1m, 3m, 5m, 10m, 15m, 30m, 1H and 1D candles.',Icons.info_outline)
+    if(chartSection=='Indices') ...[
+      _indexStrip(),
+      Card(child:Padding(padding:const EdgeInsets.all(10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        const Text('INDICES • LIVE CHART',style:TextStyle(fontWeight:FontWeight.w900)),
+        const SizedBox(height:8),
+        Wrap(spacing:5,runSpacing:5,children:indices.map((x)=>ChoiceChip(label:Text(x),selected:selectedIndex==x,onSelected:(v){if(v){setState(()=>selectedIndex=x);_loadCandles();}})).toList()),
+        const SizedBox(height:8),
+        Wrap(spacing:5,runSpacing:5,children:[
+          for(final x in const {'ONE_MINUTE':'1m','TWO_MINUTE':'2m','THREE_MINUTE':'3m','FIVE_MINUTE':'5m','TEN_MINUTE':'10m','FIFTEEN_MINUTE':'15m','THIRTY_MINUTE':'30m','ONE_HOUR':'1H','TWO_HOUR':'2H','FOUR_HOUR':'4H','ONE_DAY':'1D'}.entries)
+            ChoiceChip(label:Text(x.value),selected:selectedTimeframe==x.key,onSelected:(v){if(v){setState(()=>selectedTimeframe=x.key);_loadCandles();}})
+        ]),
+        const SizedBox(height:8),
+        Wrap(spacing:5,runSpacing:5,children:['EMA 8','EMA 13','EMA 20/50','VWAP','RSI','MACD','ATR','Bollinger','WaveTrend','Supertrend','Pivot','CPR','Fibonacci','Volume','OI'].map((x)=>FilterChip(label:Text(x),selected:selectedIndicators.contains(x),onSelected:(_)=>_toggleIndicator(x))).toList()),
+      ]))),
+      if(candles.isEmpty) _info('No verified live candles received yet.',Icons.cloud_off)
+      else Card(child:SizedBox(height:280,child:CustomPaint(painter:LiveChartPainter(candles:candles,indicators:selectedIndicators),child:const SizedBox.expand()))),
+      if(candles.isNotEmpty)_indicatorPanel(),
+      _info('Native Angel One intervals: 1m/3m/5m/10m/15m/30m/1H/1D. 2m/2H/4H are resampled from live candles.',Icons.info_outline)
+    ] else ...[
+      _info('Live option chart: select an option from the verified Option Chain to load its candles. No simulated option prices are shown.',Icons.table_chart),
+      _chips(['CE Premium','PE Premium','OI','Volume','IV','Greeks'])
+    ]
   ]);
 
   Widget _search()=>Column(children:[
