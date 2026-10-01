@@ -26,3 +26,12 @@ def test_terminal_page_is_a_file_response():
     response = asyncio.run(terminal_page())
     assert isinstance(response, FileResponse)
     assert response.path.endswith("frontend/terminal.html")
+
+
+def test_terminal_login_has_editable_api_key_controls():
+    from pathlib import Path
+
+    html = Path("frontend/terminal.html").read_text(encoding="utf-8")
+    assert 'id=lk type=password' in html
+    assert 'Save / Update API Key' in html
+    assert 'function toggleTerminalKey()' in html
