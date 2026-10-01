@@ -45,6 +45,10 @@ jobs:
       - name: Validate Python syntax
         run: python -m compileall -q backend
 
+      - name: Run Flutter tests
+        working-directory: flutter_app
+        run: flutter test
+
       - name: Analyze Dart
         working-directory: flutter_app
         run: flutter analyze --no-fatal-infos 2>&1 | tee analyze.log; exit ${PIPESTATUS[0]}
