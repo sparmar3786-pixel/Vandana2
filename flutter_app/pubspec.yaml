@@ -1,7 +1,7 @@
-name: algo_terminal
-description: NSE Algo Signal trading analysis terminal.
+name: nse_ai_terminal
+description: NSE-AI-TERMINAL Android research and paper-first options analysis UI.
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+42
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
