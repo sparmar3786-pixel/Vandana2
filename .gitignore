@@ -1,0 +1,27 @@
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# env / secrets  (NEVER commit real values)
+.env
+.env.*
+!.env.example
+
+# data
+data/
+*.sqlite
+*.sqlite-journal
+
+# logs
+*.log
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/
