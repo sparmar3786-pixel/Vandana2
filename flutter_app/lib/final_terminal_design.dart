@@ -349,7 +349,6 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Widget _chips(List<String> x)=>Wrap(spacing:5,runSpacing:5,children:x.map((s)=>Chip(label:Text(s,style:const TextStyle(fontSize:10)))).toList());
   Widget _title(String x)=>Padding(padding:const EdgeInsets.fromLTRB(2,10,2,7),child:Align(alignment:Alignment.centerLeft,child:Text(x,style:const TextStyle(fontWeight:FontWeight.w900))));
   Widget _logo(double size)=>Container(width:size,height:size,decoration:BoxDecoration(borderRadius:BorderRadius.circular(size*.22),gradient:const LinearGradient(colors:[Color(0xff1769e0),Color(0xff14c984)])),child:Icon(Icons.candlestick_chart_rounded,size:size*.52,color:Colors.white));
-  Widget _preview(String a,String b,String c)=>Container(padding:const EdgeInsets.all(9),decoration:BoxDecoration(borderRadius:BorderRadius.circular(11),border:Border.all(color:Theme.of(context).dividerColor)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(a,style:const TextStyle(fontSize:10)),Text(b,style:const TextStyle(fontWeight:FontWeight.w900)),Text(c,style:const TextStyle(fontSize:10))]));
 }
 
 
