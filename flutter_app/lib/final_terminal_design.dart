@@ -8,8 +8,8 @@ class FinalTerminalDesign extends StatefulWidget {
 }
 
 class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
-  ThemeMode mode=ThemeMode.dark;
-  int tab=2;
+  ThemeMode mode=ThemeMode.light;
+  int tab=0;
   String backendUrl='';
   String selectedIndex='NIFTY 50';
   String selectedTimeframe='FIVE_MINUTE';
@@ -18,14 +18,15 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   List<Map<String,dynamic>> strategyResults=[];
   String apiStatus='Backend URL required';
   final TextEditingController backendController=TextEditingController();
+  // 30-screen reference layout from the supplied NSE-AI-TERMINAL design.
+  // Core live-data screens are preserved; no order-placement screen is exposed.
   static const pages=<String>[
-    'Launch','Login','Dashboard','Market Overview','Option Chain','OI Heatmap',
-    'Premium / Volume','Greeks / IV','Order Flow','Market Regime','Trade Plans',
-    'Backtest','Strategy Registry','AI 6-Layer','Logs / Settings','Portfolio',
-    'Charts','Strategy Detail','Risk Management','Alerts','Education',
+    'Splash / Launch','Login / Authentication','Dashboard (Home)','Market Overview','Option Chain','OI Heatmap',
+    'Premium / Volume','Greeks / IV Surface','Order Flow','Market Regime','Trade Plans (S+)',
+    'Backtest','Strategy Registry','AI 6-Layer Panel','Logs / Settings','Portfolio / Positions',
+    'Charts - Advanced','Strategy Details','Risk Management','Notifications / Alerts','Help / Education',
     'AI Model Selection','Data Feed Status','Backtest Settings','Research Modules',
-    '377 Classification','OI Classification','Final Verdict','Light Theme','Dark Theme',
-    'Search Engine','AI 6×6 Matrix','Angel One API'
+    '377 Strategy Classification','OI Classification','Final Verdict','Angel One API','Search / AI'
   ];
   static const indices=['NIFTY 50','BANK NIFTY','FINNIFTY','MIDCPNIFTY','SENSEX','BANKEX'];
 
@@ -37,7 +38,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
         leading:IconButton(icon:const Icon(Icons.menu),onPressed:()=>Scaffold.of(context).openDrawer()),
         title:Row(children:[_logo(32),const SizedBox(width:8),const Expanded(child:Text('NSE-AI-TERMINAL'))]),
         actions:[const Chip(label:Text('LIVE')),PopupMenuButton<String>(
-          onSelected:(v){setState(()=>tab=v=='ai'?31:v=='search'?30:v=='chart'?16:32);},
+          onSelected:(v){setState(()=>tab=v=='ai'?13:v=='search'?29:v=='chart'?16:28);},
           itemBuilder:(_)=>const[
             PopupMenuItem(value:'ai',child:Text('AI 6×6 Matrix')),
             PopupMenuItem(value:'search',child:Text('Search / Strategy Engine')),
@@ -83,15 +84,13 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     Icons.show_chart,Icons.functions,Icons.swap_vert,Icons.speed,Icons.bolt,Icons.history,Icons.view_list,
     Icons.auto_awesome,Icons.settings,Icons.account_balance_wallet,Icons.candlestick_chart,Icons.rule,
     Icons.shield,Icons.notifications,Icons.school,Icons.smart_toy,Icons.wifi_tethering,Icons.tune,
-    Icons.science,Icons.numbers,Icons.compare_arrows,Icons.gavel,Icons.light_mode,Icons.dark_mode,
-    Icons.search,Icons.auto_awesome,Icons.link];
+    Icons.science,Icons.numbers,Icons.compare_arrows,Icons.gavel,Icons.link,Icons.search];
 
   Widget _page(int p){
     final b=<Widget Function()>[
       _launch,_login,_dashboard,_market,_chain,_heatmap,_premium,_greeks,_flow,_regime,
       _plans,_backtest,_registry,_ai,_settings,_portfolio,_charts,_detail,_risk,_alerts,
-      _education,_models,_feed,_btSettings,_research,_classification,_oi,_final,_light,_dark,
-      _search,_aiMatrix,_angelApi];
+      _education,_models,_feed,_btSettings,_research,_classification,_oi,_final,_angelApi,_search];
     return _shell(pages[p],b[p]());
   }
   Widget _shell(String title,Widget child)=>SafeArea(child:ListView(padding:const EdgeInsets.fromLTRB(13,10,13,24),children:[
