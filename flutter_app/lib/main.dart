@@ -682,7 +682,7 @@ class _TerminalState extends State<Terminal> {
   Widget morePage() => ListView(padding: const EdgeInsets.all(16), children: <Widget>[
     const Text('More', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
     const SizedBox(height: 12),
-    infoCard('Order mode','No order placement. Paper signals only.',Colors.orange),
+    infoCard('Order mode','No order placement in this APK.',Colors.orange),
     infoCard('Security','Keep Angel credentials server-side and never commit secrets.',Colors.blue),
     infoCard('Navigation',screens.join(', '),Colors.blue),
   ]);
