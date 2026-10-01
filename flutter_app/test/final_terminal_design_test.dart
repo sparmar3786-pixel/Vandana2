@@ -30,7 +30,10 @@ void main(){
     await tester.pumpAndSettle();
 
     expect(find.text('AI • Home page'), findsNothing);
-    await tester.tap(find.text('Option Chain'));
+    final optionChain = find.text('Option Chain');
+    await tester.ensureVisible(optionChain);
+    await tester.pumpAndSettle();
+    await tester.tap(optionChain);
     await tester.pump();
 
     expect(find.text('AI • Home page'), findsOneWidget);
