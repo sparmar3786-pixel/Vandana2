@@ -60,8 +60,6 @@ class Settings(BaseSettings):
     bankex_lot_size: int = 15
 
     # ---------------- live orders (keep off) ----------------
-    enable_live_orders: int = 0
-    require_human_confirm: int = 1
 
     # ---------------- data quality gate ----------------
     max_tick_age_sec: float = 5.0
@@ -119,14 +117,6 @@ class Settings(BaseSettings):
     @property
     def mcp_on(self) -> bool:
         return self.mcp_enabled.strip().lower() in {"1", "on", "true", "yes"}
-
-    @property
-    def live_orders_on(self) -> bool:
-        return int(self.enable_live_orders) == 1
-
-    @property
-    def human_confirm_required(self) -> bool:
-        return int(self.require_human_confirm) == 1
 
     @property
     def web_search_on(self) -> bool:
