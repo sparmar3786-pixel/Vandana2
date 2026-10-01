@@ -13,7 +13,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   String backendUrl='';
   String selectedIndex='NIFTY 50';
   String selectedTimeframe='FIVE_MINUTE';
-  final Set<String> selectedIndicators={'EMA 8','EMA 13','VWAP','RSI','MACD','ATR','Bollinger'};
+  final Set<String> selectedIndicators={'EMA 8','EMA 13','EMA 20/50','VWAP','RSI','MACD','ATR','Bollinger'};
   List<Map<String,dynamic>> candles=[];
   List<Map<String,dynamic>> strategyResults=[];
   List<Map<String,dynamic>> aiLayers=[];
