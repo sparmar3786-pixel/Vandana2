@@ -116,7 +116,10 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Map<String,String> _authHeaders({bool jsonBody=false}){
     final h=<String,String>{};
     final key=terminalApiKeyController.text.trim();
-    if(key.isNotEmpty) h['X-API-Key']=key;
+    if(key.isNotEmpty){
+      h['X-API-Key']=key;
+      h['X-Token']=key;
+    }
     if(jsonBody) h['Content-Type']='application/json';
     return h;
   }
@@ -128,21 +131,44 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     if(terminalApiKeyController.text.trim().isEmpty){setState(()=>loginStatus='Terminal API Key required.');return;}
     setState(()=>loginStatus='Connecting to Angel One…');
     try{
-      final r=await http.post(
-        Uri.parse('$base/api/live/angel/login'),
-        headers:_authHeaders(jsonBody:true),
+      final headers=_authHeaders(jsonBody:true);
+      final angelKey=angelApiKeyController.text.trim();
+      final clientId=clientIdController.text.trim();
+      final pin=pinController.text.trim();
+      final totp=totpController.text.trim();
+
+      var response=await http.post(
+        Uri.parse('$base/v1/angel/login'),
+        headers:headers,
         body:jsonEncode({
-          'api_key':angelApiKeyController.text.trim().isEmpty?null:angelApiKeyController.text.trim(),
-          'client_id':clientIdController.text.trim().isEmpty?null:clientIdController.text.trim(),
-          'pin':pinController.text.trim().isEmpty?null:pinController.text.trim(),
-          'totp':totpController.text.trim().isEmpty?null:totpController.text.trim(),
+          'clientId':clientId.isEmpty?null:clientId,
+          'pin':pin.isEmpty?null:pin,
+          'totp':totp.isEmpty?null:totp,
+          'apiKey':angelKey.isEmpty?null:angelKey,
         }),
       ).timeout(const Duration(seconds:20));
-      final j=jsonDecode(r.body);
-      if(r.statusCode<300 && j is Map && j['connected']==true){
-        setState(()=>loginStatus='Angel One connected • JWT/feed token received');
+
+      if(response.statusCode==404 || response.statusCode==405){
+        response=await http.post(
+          Uri.parse('$base/api/live/angel/login'),
+          headers:headers,
+          body:jsonEncode({
+            'client_id':clientId.isEmpty?null:clientId,
+            'pin':pin.isEmpty?null:pin,
+            'totp':totp.isEmpty?null:totp,
+            'api_key':angelKey.isEmpty?null:angelKey,
+          }),
+        ).timeout(const Duration(seconds:20));
+      }
+
+      final j=jsonDecode(response.body);
+      if(response.statusCode<300 && j is Map && j['connected']==true){
+        setState(()=>loginStatus='Angel One connected');
       }else{
-        setState(()=>loginStatus='Login failed: '+(j is Map && j['detail']!=null?j['detail'].toString():r.body));
+        final detail=j is Map && (j['detail']!=null || j['message']!=null)
+            ?(j['detail'] ?? j['message']).toString()
+            :response.body;
+        setState(()=>loginStatus='Login failed: '+detail);
       }
     }catch(e){setState(()=>loginStatus='Connection failed: '+e.runtimeType.toString());}
   }

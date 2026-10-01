@@ -14,6 +14,7 @@ void main(){
     expect(find.text('https://nse-algo-backend-production.up.railway.app'), findsOneWidget);
     expect(find.text('Terminal API Key'), findsOneWidget);
     expect(find.text('Angel One API Key'), findsOneWidget);
+    expect(find.text('Backend URL'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'CONNECT'), findsOneWidget);
     expect(find.byIcon(Icons.visibility), findsNWidgets(2));
     expect(find.byType(TextField), findsNWidgets(6));
