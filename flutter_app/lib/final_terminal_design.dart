@@ -35,7 +35,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     theme:_theme(false),darkTheme:_theme(true),
     home:Builder(builder:(context)=>Scaffold(
       appBar:AppBar(
-        leading:IconButton(icon:const Icon(Icons.menu),onPressed:()=>Scaffold.of(context).openDrawer()),
+        leading:Builder(builder:(context)=>IconButton(icon:const Icon(Icons.menu),onPressed:()=>Scaffold.of(context).openDrawer())),
         title:Row(children:[_logo(32),const SizedBox(width:8),const Expanded(child:Text('NSE-AI-TERMINAL'))]),
         actions:[const Chip(label:Text('LIVE')),PopupMenuButton<String>(
           onSelected:(v){setState(()=>tab=v=='ai'?13:v=='search'?29:v=='chart'?16:28);},
@@ -74,7 +74,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       onChanged:(v)=>setState(()=>mode=v?ThemeMode.dark:ThemeMode.light)),const Divider(),
     Expanded(child:ListView.builder(itemCount:pages.length,itemBuilder:(_,i)=>ListTile(
       dense:true,selected:tab==i,leading:Icon(_icons[i]),
-      title:Text((i+1).toString()+'. '+pages[i]),
+      title:Text('${i+1}. ${pages[i]}'),
       onTap:(){Navigator.pop(context);setState(()=>tab=i);}))),
     const Padding(padding:EdgeInsets.all(12),child:Text('Live data only • Order placement unavailable • Secrets server-side',style:TextStyle(fontSize:11)))
   ])));
@@ -114,7 +114,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
 
   Future<void> _connectBackend() async {
     var base=backendUrl.trim();
-    while(base.endsWith('/')) base=base.substring(0,base.length-1);
+    while(base.endsWith('/')) { base=base.substring(0,base.length-1); }
     if(base.isEmpty){setState(()=>apiStatus='Enter backend URL first');return;}
     try{
       final r=await http.post(Uri.parse(base+'/api/angel/connect')).timeout(const Duration(seconds:12));
@@ -126,10 +126,10 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
 
   Future<void> _loadCandles() async {
     var base=backendUrl.trim();
-    while(base.endsWith('/')) base=base.substring(0,base.length-1);
+    while(base.endsWith('/')) { base=base.substring(0,base.length-1); }
     if(base.isEmpty)return;
     try{
-      final url=base+'/api/candles/'+Uri.encodeComponent(_apiIndex(selectedIndex))+'?interval='+selectedTimeframe+'&days=5';
+      final url='$base/api/candles/${Uri.encodeComponent(_apiIndex(selectedIndex))}?interval=$selectedTimeframe&days=5';
       final r=await http.get(Uri.parse(url)).timeout(const Duration(seconds:15));
       if(r.statusCode<300){
         final j=jsonDecode(r.body) as Map<String,dynamic>;
@@ -141,10 +141,10 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
 
   Future<void> _searchStrategies(String q) async {
     var base=backendUrl.trim();
-    while(base.endsWith('/')) base=base.substring(0,base.length-1);
+    while(base.endsWith('/')) { base=base.substring(0,base.length-1); }
     if(base.isEmpty){setState(()=>strategyResults=[]);return;}
     try{
-      final url=base+'/api/strategies?q='+Uri.encodeQueryComponent(q)+'&limit=100';
+      final url='$base/api/strategies?q=${Uri.encodeQueryComponent(q)}&limit=100';
       final r=await http.get(Uri.parse(url)).timeout(const Duration(seconds:10));
       if(r.statusCode<300){
         final j=jsonDecode(r.body) as Map<String,dynamic>;
@@ -223,7 +223,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       const SizedBox(height:8),
       Wrap(spacing:5,runSpacing:5,children:['EMA 8','EMA 13','VWAP','RSI','MACD','ATR','Bollinger','WaveTrend','Supertrend','Pivot','CPR','Fibonacci'].map((x)=>FilterChip(label:Text(x),selected:selectedIndicators.contains(x),onSelected:(_)=>_toggleIndicator(x))).toList()),
     ]))),
-    if(candles.isEmpty)_info('No verified live candles received yet.',Icons.cloud_off)
+    if(candles.isEmpty){_info('No verified live candles received yet.',Icons.cloud_off)}
     else Card(child:SizedBox(height:280,child:CustomPaint(painter:LiveChartPainter(candles:candles,indicators:selectedIndicators),child:const SizedBox.expand()))),
     if(candles.isNotEmpty)_indicatorPanel(),
     _info('Angel One Historical API supports 1m, 3m, 5m, 10m, 15m, 30m, 1H and 1D candles.',Icons.info_outline)
@@ -235,15 +235,6 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     _info('Search Engine uses the live 377-module strategy registry from the backend.',Icons.search),
     if(strategyResults.isEmpty)_info('Connect the backend and enter a query.',Icons.cloud_off)
     else ...strategyResults.map((x)=>_row(x['id'].toString(),x['name'].toString(),(x['family'] ?? 'Strategy').toString()))
-  ]);
-
-  Widget _aiMatrix()=>Column(children:[
-    _info('AI 6×6 Matrix • 6 validation layers × 6 model slots. AI validates deterministic evidence only.',Icons.auto_awesome),
-    ...['L1 Data Quality','L2 Market Regime','L3 OI / Premium','L4 Risk / R:R','L5 Cross-check','L6 Final Guard'].map((layer)=>Card(child:Padding(padding:const EdgeInsets.all(10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-      Text(layer,style:const TextStyle(fontWeight:FontWeight.w900)),
-      const SizedBox(height:6),
-      ...['GPT-5.6 Luna','Claude Sonnet 4.6','GPT-5.6 Sol','DeepSeek Chat','Gemini 2.5 Flash','Grok 4'].map((m)=>_row(m,'Runtime validation','WAIT'))
-    ])))),
   ]);
 
   Widget _angelApi()=>Column(children:[
@@ -268,28 +259,28 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   double? _num(dynamic v)=>v is num?v.toDouble():double.tryParse(v?.toString() ?? '');
   String _fmt(double? v)=>v==null?'—':v.toStringAsFixed(2);
   List<double> _ema(List<double> a,int n){
-    if(a.isEmpty)return [];
+    if(a.isEmpty){return [];}
     final k=2/(n+1); final out=<double>[a.first];
-    for(var i=1;i<a.length;i++)out.add(a[i]*k+out.last*(1-k));
+    for(var i=1;i<a.length;i++){ out.add(a[i]*k+out.last*(1-k)); }
     return out;
   }
   double? _macd(List<double> a){
-    if(a.length<2)return null;
+    if(a.length<2){return null;}
     final e12=_ema(a,12),e26=_ema(a,26); return e12.last-e26.last;
   }
   double? _rsi(List<double> a,int n){
-    if(a.length<=n)return null;
+    if(a.length<=n){return null;}
     var gain=0.0,loss=0.0;
-    for(var i=1;i<=n;i++){final d=a[i]-a[i-1];if(d>=0)gain+=d;else loss-=d;}
+    for(var i=1;i<=n;i++){final d=a[i]-a[i-1];if(d>=0){gain+=d;}else{loss-=d;}}
     var avgG=gain/n,avgL=loss/n;
     for(var i=n+1;i<a.length;i++){final d=a[i]-a[i-1];avgG=(avgG*(n-1)+(d>0?d:0))/n;avgL=(avgL*(n-1)+(d<0?-d:0))/n;}
     if(avgL==0)return 100; return 100-(100/(1+avgG/avgL));
   }
   double? _atr(List<Map<String,dynamic>> rows,int n){
-    if(rows.length<n+1)return null;
+    if(rows.length<n+1){return null;}
     final tr=<double>[];
     for(var i=1;i<rows.length;i++){final h=_num(rows[i]['high']),l=_num(rows[i]['low']),pc=_num(rows[i-1]['close']);if(h!=null&&l!=null&&pc!=null){tr.add([h-l,(h-pc).abs(),(l-pc).abs()].reduce((a,b)=>a>b?a:b));}}
-    if(tr.length<n)return null; return tr.sublist(tr.length-n).reduce((a,b)=>a+b)/n;
+    if(tr.length<n){return null;} return tr.sublist(tr.length-n).reduce((a,b)=>a+b)/n;
   }
   double? _vwap(List<Map<String,dynamic>> rows){
     var pv=0.0,v=0.0;
@@ -344,8 +335,6 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     _verdict('NO TRADE','No complete qualifying setup or data-quality failure',Colors.grey),
     _info('These are the only four final outputs.',Icons.gavel)]);
 
-  Widget _light()=>_themeCard(false);
-  Widget _dark()=>_themeCard(true);
   Widget _themeCard(bool dark)=>Card(color:dark?const Color(0xff0b1727):Colors.white,child:Padding(padding:const EdgeInsets.all(18),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Text('NSE-AI-TERMINAL',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900,color:dark?Colors.white:const Color(0xff132238))),
     const SizedBox(height:12),Row(children:[Expanded(child:_preview('NIFTY 50','—','LIVE FEED')),const SizedBox(width:8),Expanded(child:_preview('PCR','—','LIVE FEED'))]),
@@ -360,7 +349,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Widget _grid(List<List<String>> a)=>GridView.count(crossAxisCount:2,shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),crossAxisSpacing:7,mainAxisSpacing:7,childAspectRatio:3,children:a.map((x)=>Card(child:Padding(padding:const EdgeInsets.all(9),child:Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[Text(x[0],style:const TextStyle(fontSize:11)),Text(x[1],style:const TextStyle(fontWeight:FontWeight.w800))])))).toList());
   Widget _row(String a,String b,String c)=>Card(child:ListTile(dense:true,title:Text(a,style:const TextStyle(fontWeight:FontWeight.w700)),subtitle:Text(b),trailing:Text(c)));
   Widget _setting(String a,String b)=>_row(a,b,'');
-  Widget _oiCard(String title,String formula,String desc,Color color,IconData icon)=>Card(child:ListTile(leading:CircleAvatar(backgroundColor:color.withOpacity(.14),foregroundColor:color,child:Icon(icon)),title:Text(title,style:TextStyle(fontWeight:FontWeight.w900,color:color)),subtitle:Text(formula+'\\n'+desc)));
+  Widget _oiCard(String title,String formula,String desc,Color color,IconData icon)=>Card(child:ListTile(leading:CircleAvatar(backgroundColor:color.withValues(alpha:.14),foregroundColor:color,child:Icon(icon)),title:Text(title,style:TextStyle(fontWeight:FontWeight.w900,color:color)),subtitle:Text('$formula\n$desc')));
   Widget _verdict(String title,String desc,Color color)=>Card(child:Container(padding:const EdgeInsets.all(13),decoration:BoxDecoration(borderRadius:BorderRadius.circular(15),border:Border(left:BorderSide(color:color,width:5))),child:Row(children:[Icon(Icons.circle,color:color,size:12),const SizedBox(width:9),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:TextStyle(fontWeight:FontWeight.w900,color:color)),Text(desc)]))])));
   Widget _info(String text,IconData icon)=>Card(child:ListTile(dense:true,leading:Icon(icon,color:Theme.of(context).colorScheme.primary),title:Text(text)));
   Widget _chips(List<String> x)=>Wrap(spacing:5,runSpacing:5,children:x.map((s)=>Chip(label:Text(s,style:const TextStyle(fontSize:10)))).toList());
@@ -381,7 +370,7 @@ class LiveChartPainter extends CustomPainter{
   List<double> _ema(List<double> a,int n){
     if(a.isEmpty)return [];
     final k=2/(n+1); final out=<double>[a.first];
-    for(var i=1;i<a.length;i++)out.add(a[i]*k+out.last*(1-k));
+    for(var i=1;i<a.length;i++){ out.add(a[i]*k+out.last*(1-k)); }
     return out;
   }
   double? _vwap(){
@@ -399,7 +388,7 @@ class LiveChartPainter extends CustomPainter{
     Offset pt(int i,double v)=>Offset(i*(size.width/(a.length-1)),size.height-((v-minV)/span)*size.height*.82-size.height*.08);
     void line(List<double> vals){
       final path=Path();
-      for(var i=0;i<vals.length;i++){final p=pt(i,vals[i]);if(i==0)path.moveTo(p.dx,p.dy);else path.lineTo(p.dx,p.dy);}
+      for(var i=0;i<vals.length;i++){final p=pt(i,vals[i]);if(i==0){path.moveTo(p.dx,p.dy);}else{path.lineTo(p.dx,p.dy);}}
       canvas.drawPath(path,Paint()..strokeWidth=2..style=PaintingStyle.stroke);
     }
     line(a);
@@ -408,7 +397,7 @@ class LiveChartPainter extends CustomPainter{
     final vwap=_vwap();
     if(indicators.contains('VWAP')&&vwap!=null)line(List<double>.filled(a.length,vwap));
     if(indicators.contains('Bollinger')&&a.length>=20){
-      final ema=_ema(a,20); final upper=<double>[],lower=<double>[];
+      final upper=<double>[],lower=<double>[];
       for(var i=0;i<a.length;i++){
         final start=i<19?0:i-19; final w=a.sublist(start,i+1); final m=w.reduce((x,y)=>x+y)/w.length;
         final variance=w.map((x)=>(x-m)*(x-m)).reduce((x,y)=>x+y)/w.length; final sd=variance>0?variance.sqrt():0;
@@ -425,6 +414,6 @@ extension on double{
 }
 double mathSqrt(double x){
   var g=x>1?x:1.0;
-  for(var i=0;i<12;i++)g=(g+x/g)/2;
+  for(var i=0;i<12;i++){ g=(g+x/g)/2; }
   return g;
 }
