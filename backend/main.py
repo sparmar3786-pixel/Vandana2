@@ -132,7 +132,6 @@ async def health() -> Dict[str, Any]:
         "source": settings.data_source,
         "advanced_engine": settings.advanced_enabled,
         "ai_enabled": settings.ai_on,
-        "live_orders": settings.live_orders_on,
         "ws_clients": manager.count,
     }
 
@@ -147,8 +146,6 @@ async def api_config() -> Dict[str, Any]:
         "ai_enabled": settings.ai_on,
         "ai_transport": settings.ai_transport,
         "ai_models": settings.ai_models,
-        "live_orders": settings.live_orders_on,
-        "human_confirm_required": settings.human_confirm_required,
         "min_trade_plans": settings.min_trade_plans,
         "min_rr": settings.min_rr,
     }
@@ -194,15 +191,6 @@ async def api_strategy(sid: str) -> Dict[str, Any]:
 
 
 # ----------------------------- orders -----------------------------
-
-class OrderRequest(BaseModel):
-    index: str
-    strike: float
-    option_type: str            # CE | PE
-    side: str = "BUY"
-    quantity: int = 1
-    confirm: str = ""
-
 
 @app.get("/api/angel/status")
 async def angel_status() -> Dict[str, Any]:
