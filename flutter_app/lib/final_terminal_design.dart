@@ -10,7 +10,7 @@ class FinalTerminalDesign extends StatefulWidget {
 class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   ThemeMode mode=ThemeMode.light;
   int tab=0;
-  String backendUrl='';
+  String backendUrl='https://nse-algo-backend-production.up.railway.app';
   String selectedIndex='NIFTY 50';
   String selectedTimeframe='FIVE_MINUTE';
   final Set<String> selectedIndicators={'EMA 8','EMA 13','EMA 20/50','VWAP','RSI','MACD','ATR','Bollinger'};
@@ -20,12 +20,14 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   String aiStatus='AI validation not connected';
   String chartSection='Indices';
   String apiStatus='Backend URL required';
-  final TextEditingController backendController=TextEditingController();
+  final TextEditingController backendController=TextEditingController(text:'https://nse-algo-backend-production.up.railway.app');
   final TextEditingController terminalApiKeyController=TextEditingController();
+  final TextEditingController angelApiKeyController=TextEditingController();
   final TextEditingController clientIdController=TextEditingController();
   final TextEditingController pinController=TextEditingController();
   final TextEditingController totpController=TextEditingController();
   bool showTerminalApiKey=false;
+  bool showAngelApiKey=false;
   String loginStatus='';
   // 30-screen reference layout from the supplied NSE-AI-TERMINAL design.
   // Core live-data screens are preserved; no order-placement screen is exposed.
@@ -130,6 +132,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
         Uri.parse('$base/api/live/angel/login'),
         headers:_authHeaders(jsonBody:true),
         body:jsonEncode({
+          'api_key':angelApiKeyController.text.trim().isEmpty?null:angelApiKeyController.text.trim(),
           'client_id':clientIdController.text.trim().isEmpty?null:clientIdController.text.trim(),
           'pin':pinController.text.trim().isEmpty?null:pinController.text.trim(),
           'totp':totpController.text.trim().isEmpty?null:totpController.text.trim(),
@@ -145,8 +148,11 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   }
 
   Widget _login()=>Column(children:[
-    _info('Terminal API Key is editable here • sent as X-API-Key to your backend.',Icons.vpn_key),
-    TextField(controller:terminalApiKeyController,obscureText:!showTerminalApiKey,decoration:InputDecoration(labelText:'Terminal API Key',hintText:'Enter API key',prefixIcon:const Icon(Icons.key),suffixIcon:IconButton(tooltip:showTerminalApiKey?'Hide':'Show',onPressed:()=>setState(()=>showTerminalApiKey=!showTerminalApiKey),icon:Icon(showTerminalApiKey?Icons.visibility_off:Icons.visibility)))),
+    _info('Terminal API Key authenticates this APK to your backend.',Icons.vpn_key),
+    TextField(controller:terminalApiKeyController,obscureText:!showTerminalApiKey,decoration:InputDecoration(labelText:'Terminal API Key',hintText:'Enter terminal key',prefixIcon:const Icon(Icons.key),suffixIcon:IconButton(tooltip:showTerminalApiKey?'Hide':'Show',onPressed:()=>setState(()=>showTerminalApiKey=!showTerminalApiKey),icon:Icon(showTerminalApiKey?Icons.visibility_off:Icons.visibility)))),
+    const SizedBox(height:8),
+    _info('Angel One API Key is editable separately and is sent only for Angel login.',Icons.api),
+    TextField(controller:angelApiKeyController,obscureText:!showAngelApiKey,decoration:InputDecoration(labelText:'Angel One API Key',hintText:'Enter Angel One API key',prefixIcon:const Icon(Icons.key),suffixIcon:IconButton(tooltip:showAngelApiKey?'Hide':'Show',onPressed:()=>setState(()=>showAngelApiKey=!showAngelApiKey),icon:Icon(showAngelApiKey?Icons.visibility_off:Icons.visibility)))),
     const SizedBox(height:8),
     TextField(controller:clientIdController,decoration:const InputDecoration(labelText:'Client ID',prefixIcon:Icon(Icons.person))),
     const SizedBox(height:8),
@@ -354,7 +360,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   ]);
 
   Widget _angelApi()=>Column(children:[
-    TextField(controller:backendController,decoration:const InputDecoration(labelText:'Backend URL',hintText:'https://your-server.example',prefixIcon:Icon(Icons.link)),onChanged:(v)=>backendUrl=v),
+    TextField(controller:backendController,decoration:const InputDecoration(labelText:'Backend URL',prefixIcon:Icon(Icons.link)),onChanged:(v)=>backendUrl=v),
     const SizedBox(height:8),
     FilledButton.icon(onPressed:_connectBackend,icon:const Icon(Icons.login),label:const Text('CONNECT ANGEL ONE LIVE')),
     const SizedBox(height:8),
