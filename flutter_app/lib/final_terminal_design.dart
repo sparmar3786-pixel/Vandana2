@@ -316,15 +316,15 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
 
   Widget _indicatorPanel(){
     final close=candles.map((x)=>_num(x['close'])).whereType<double>().toList();
-    final e8=_ema(close,8); final e13=_ema(close,13); final e20=_ema(close,20); final e50=_ema(close,50);
+    final e8=_ema(close,8); final e13=_ema(close,13); final e20=_ema(close,20); final e50=_ema(close,50); final bb=_bollinger(close);
     final latest=candles.isEmpty?null:candles.last;
     return _grid([
       ['EMA 8',_fmt(e8.isEmpty?null:e8.last),'Indicator'],['EMA 13',_fmt(e13.isEmpty?null:e13.last),'Indicator'],
       ['EMA 20',_fmt(e20.isEmpty?null:e20.last),'Indicator'],['EMA 50',_fmt(e50.isEmpty?null:e50.last),'Indicator'],
       ['VWAP',_fmt(_vwap(candles)),'Indicator'],['RSI 14',_fmt(_rsi(close,14)),'Indicator'],
       ['MACD',_fmt(_macd(close)),'Indicator'],['ATR 14',_fmt(_atr(candles,14)),'Indicator'],
-      ['Bollinger mid',_fmt(_bollinger(close)?.$1),'Indicator'],['Bollinger upper',_fmt(_bollinger(close)?.$2),'Indicator'],
-      ['Bollinger lower',_fmt(_bollinger(close)?.$3),'Indicator'],['WaveTrend',_fmt(_waveTrend(candles)),'Indicator'],
+      ['Bollinger mid',_fmt(bb==null?null:bb[0]),'Indicator'],['Bollinger upper',_fmt(bb==null?null:bb[1]),'Indicator'],
+      ['Bollinger lower',_fmt(bb==null?null:bb[2]),'Indicator'],['WaveTrend',_fmt(_waveTrend(candles)),'Indicator'],
       ['Supertrend',_fmt(_supertrend(candles,10,3)),'Indicator'],['Pivot',_fmt(_pivot(candles)),'Indicator'],
       ['CPR',_fmt(_cpr(candles)),'Indicator'],['Fibonacci 61.8%',_fmt(_fib618(candles)),'Context'],
       ['Volume',_fmt(_num(latest?['volume'])),'Live'],['OI',_fmt(_num(latest?['oi'])),'Live']
