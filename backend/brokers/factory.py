@@ -129,5 +129,5 @@ def get_data_source()->DataSource:
     for name in order:
         try: sources.append(build_source(name))
         except DataSourceError as e: logger.warning("factory: skipping {} ({})",name,e)
-    if not sources: sources=[build_source("demo")]
+    if not sources: raise DataSourceError("no live data source configured")
     return sources[0] if len(sources)==1 else FallbackSource(sources)
