@@ -117,7 +117,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     while(base.endsWith('/')) { base=base.substring(0,base.length-1); }
     if(base.isEmpty){setState(()=>apiStatus='Enter backend URL first');return;}
     try{
-      final r=await http.post(Uri.parse(base+'/api/angel/connect')).timeout(const Duration(seconds:12));
+      final r=await http.post(Uri.parse('$base/api/angel/connect')).timeout(const Duration(seconds:12));
       final j=jsonDecode(r.body) as Map<String,dynamic>;
       setState(()=>apiStatus=r.statusCode<300 && j['connected']==true?'Angel One connected':'Connection failed');
       if(r.statusCode<300) await _loadCandles();
@@ -127,7 +127,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Future<void> _loadCandles() async {
     var base=backendUrl.trim();
     while(base.endsWith('/')) { base=base.substring(0,base.length-1); }
-    if(base.isEmpty)return;
+    if(base.isEmpty){return;}
     try{
       final url='$base/api/candles/${Uri.encodeComponent(_apiIndex(selectedIndex))}?interval=$selectedTimeframe&days=5';
       final r=await http.get(Uri.parse(url)).timeout(const Duration(seconds:15));
@@ -195,7 +195,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
 
   Widget _registry()=>Column(children:[const TextField(decoration:InputDecoration(prefixIcon:Icon(Icons.search),hintText:'Search 377 modules')),const SizedBox(height:8),
     ...['Long Buildup','Short Buildup','Short Covering','Long Unwinding','OI Wall','OI Wall Break','OI Migration','Premium Momentum','Volume + OI Confirmation']
-      .asMap().entries.map((e)=>_row('S'+(e.key+1).toString().padLeft(3,'0'),e.value,'OI / Position')),
+      .asMap().entries.map((e)=>_row('S${(e.key+1).toString().padLeft(3,'0')}',e.value,'OI / Position')),
     _info('Types: Signal • Indicator • Filter • Risk • Data • Backtest • AI • Decision',Icons.list_alt)]);
 
   Widget _ai()=>Column(children:[...['L1 • GPT-5.6 Luna','L2 • Claude Sonnet 4.6','L3 • GPT-5.6 Sol','L4 • DeepSeek Chat','L5 • Gemini 2.5 Flash','L6 • Grok 4']
@@ -223,7 +223,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       const SizedBox(height:8),
       Wrap(spacing:5,runSpacing:5,children:['EMA 8','EMA 13','VWAP','RSI','MACD','ATR','Bollinger','WaveTrend','Supertrend','Pivot','CPR','Fibonacci'].map((x)=>FilterChip(label:Text(x),selected:selectedIndicators.contains(x),onSelected:(_)=>_toggleIndicator(x))).toList()),
     ]))),
-    if(candles.isEmpty){_info('No verified live candles received yet.',Icons.cloud_off)}
+    if(candles.isEmpty) _info('No verified live candles received yet.',Icons.cloud_off)
     else Card(child:SizedBox(height:280,child:CustomPaint(painter:LiveChartPainter(candles:candles,indicators:selectedIndicators),child:const SizedBox.expand()))),
     if(candles.isNotEmpty)_indicatorPanel(),
     _info('Angel One Historical API supports 1m, 3m, 5m, 10m, 15m, 30m, 1H and 1D candles.',Icons.info_outline)
@@ -274,7 +274,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     for(var i=1;i<=n;i++){final d=a[i]-a[i-1];if(d>=0){gain+=d;}else{loss-=d;}}
     var avgG=gain/n,avgL=loss/n;
     for(var i=n+1;i<a.length;i++){final d=a[i]-a[i-1];avgG=(avgG*(n-1)+(d>0?d:0))/n;avgL=(avgL*(n-1)+(d<0?-d:0))/n;}
-    if(avgL==0)return 100; return 100-(100/(1+avgG/avgL));
+    if(avgL==0){return 100;} return 100-(100/(1+avgG/avgL));
   }
   double? _atr(List<Map<String,dynamic>> rows,int n){
     if(rows.length<n+1){return null;}
@@ -368,7 +368,7 @@ class LiveChartPainter extends CustomPainter{
   double? _n(dynamic v)=>v is num?v.toDouble():double.tryParse(v?.toString() ?? '');
   List<double> _close()=>candles.map((x)=>_n(x['close'])).whereType<double>().toList();
   List<double> _ema(List<double> a,int n){
-    if(a.isEmpty)return [];
+    if(a.isEmpty){return [];}
     final k=2/(n+1); final out=<double>[a.first];
     for(var i=1;i<a.length;i++){ out.add(a[i]*k+out.last*(1-k)); }
     return out;
@@ -382,7 +382,7 @@ class LiveChartPainter extends CustomPainter{
     return v==0?null:pv/v;
   }
   @override void paint(Canvas canvas,Size size){
-    final a=_close(); if(a.length<2)return;
+    final a=_close(); if(a.length<2){return;}
     final minV=a.reduce((x,y)=>x<y?x:y),maxV=a.reduce((x,y)=>x>y?x:y);
     final span=(maxV-minV).abs()<0.0001?1:(maxV-minV);
     Offset pt(int i,double v)=>Offset(i*(size.width/(a.length-1)),size.height-((v-minV)/span)*size.height*.82-size.height*.08);
@@ -392,10 +392,10 @@ class LiveChartPainter extends CustomPainter{
       canvas.drawPath(path,Paint()..strokeWidth=2..style=PaintingStyle.stroke);
     }
     line(a);
-    if(indicators.contains('EMA 8'))line(_ema(a,8));
-    if(indicators.contains('EMA 13'))line(_ema(a,13));
+    if(indicators.contains('EMA 8')){line(_ema(a,8));}
+    if(indicators.contains('EMA 13')){line(_ema(a,13));}
     final vwap=_vwap();
-    if(indicators.contains('VWAP')&&vwap!=null)line(List<double>.filled(a.length,vwap));
+    if(indicators.contains('VWAP')&&vwap!=null){line(List<double>.filled(a.length,vwap));}
     if(indicators.contains('Bollinger')&&a.length>=20){
       final upper=<double>[],lower=<double>[];
       for(var i=0;i<a.length;i++){
