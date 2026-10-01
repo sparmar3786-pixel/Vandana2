@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Point 6: backend run script.
 # Start the FastAPI + WebSocket backend.
 set -euo pipefail
 cd "$(dirname "$0")"
