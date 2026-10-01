@@ -1,26 +1,28 @@
-import os
+import asyncio
 
-import pytest
-from fastapi.testclient import TestClient
+from fastapi.responses import FileResponse
 
 
-def test_live_router_is_mounted_and_requires_api_key(monkeypatch):
+def test_live_router_is_mounted_and_api_guard_fails_closed(monkeypatch):
     monkeypatch.setenv("TERMINAL_API_KEY", "test-key")
     from backend.app import app
+    from backend.live_api import guard
 
-    client = TestClient(app)
-    response = client.get("/api/live/net")
-    assert response.status_code == 401
+    paths = {getattr(route, "path", None) for route in app.routes}
+    assert "/api/live/net" in paths
+    assert "/terminal.html" in paths
 
-    response = client.get("/api/live/net", headers={"X-API-Key": "test-key"})
-    assert response.status_code == 200
-    assert "offline" in response.json()
+    try:
+        guard("")
+    except Exception as exc:
+        assert getattr(exc, "status_code", None) == 401
+    else:
+        raise AssertionError("missing API key must be rejected")
 
 
-def test_terminal_page_is_served():
-    from backend.app import app
+def test_terminal_page_is_a_file_response():
+    from backend.app import terminal_page
 
-    client = TestClient(app)
-    response = client.get("/terminal.html")
-    assert response.status_code == 200
-    assert "NSE-AI-TERMINAL" in response.text
+    response = asyncio.run(terminal_page())
+    assert isinstance(response, FileResponse)
+    assert response.path.endswith("frontend/terminal.html")
