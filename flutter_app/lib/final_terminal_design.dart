@@ -222,7 +222,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
           ChoiceChip(label:Text(x.value),selected:selectedTimeframe==x.key,onSelected:(v){if(v){setState(()=>selectedTimeframe=x.key);_loadCandles();}})
       ]),
       const SizedBox(height:8),
-      Wrap(spacing:5,runSpacing:5,children:['EMA 8','EMA 13','VWAP','RSI','MACD','ATR','Bollinger','WaveTrend','Supertrend','Pivot','CPR','Fibonacci'].map((x)=>FilterChip(label:Text(x),selected:selectedIndicators.contains(x),onSelected:(_)=>_toggleIndicator(x))).toList(),
+      Wrap(spacing:5,runSpacing:5,children:['EMA 8','EMA 13','VWAP','RSI','MACD','ATR','Bollinger','WaveTrend','Supertrend','Pivot','CPR','Fibonacci'].map((x)=>FilterChip(label:Text(x),selected:selectedIndicators.contains(x),onSelected:(_)=>_toggleIndicator(x))).toList()),
     ])),
     if(candles.isEmpty)_info('No verified live candles received yet.',Icons.cloud_off)
     else Card(child:SizedBox(height:280,child:CustomPaint(painter:LiveChartPainter(candles:candles,indicators:selectedIndicators),child:const SizedBox.expand()))),
