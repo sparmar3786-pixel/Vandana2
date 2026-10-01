@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'flutter_app/**'
+      - 'backend/**'
       - '.github/workflows/build-flutter-apk.yml'
 
 jobs:
