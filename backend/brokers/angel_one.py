@@ -47,11 +47,16 @@ class AngelOneClient(DataSource):
         s=get_settings(); super().__init__(rps=s.rate_limit_rps); self.s=s; self.price_scale=price_scale
         self.api_key_override=api_key.strip() if api_key else None
         self.client_id_override=None
+        self.pin_override=None
+        self.totp_override=None
         self._limiter=_AsyncRateLimiter(s.rate_limit_rps); self.jwt=None; self.refresh_token=s.angel_refresh_token or None
         self.feed_token=None; self._session=requests.Session(); self._instruments=None; self._all_instruments=None; self._token_index={}; self._index_tokens={}; self._ws=None
 
     def generate_totp(self)->str:
-        if not self.s.angel_totp_secret: raise AuthError("ANGEL_TOTP_SECRET is not set")
+        if self.totp_override:
+            return self.totp_override
+        if not self.s.angel_totp_secret:
+            raise AuthError("ANGEL_TOTP_SECRET is not set")
         return pyotp.TOTP(self.s.angel_totp_secret).now()
 
     def _base_headers(self)->Dict[str,str]:
@@ -67,7 +72,7 @@ class AngelOneClient(DataSource):
 
     async def _login(self)->None:
         client_id = (self.client_id_override or self.s.angel_client_id or "").strip()
-        pin = (self.s.angel_pin or "").strip()
+        pin = (self.pin_override or self.s.angel_pin or "").strip()
         if not (client_id and pin):
             raise AuthError("Angel One client id / PIN incomplete")
         data=await self._post_raw(
