@@ -85,20 +85,29 @@ except Exception:
 
 def guard(
     x_api_key: str = Header(default=""),
+    x_token: str = Header(default=""),
+    x_app_key: str = Header(default=""),
     x_session_token: str = Header(default=""),
     request: Request = None,  # FastAPI injects Request; default keeps direct unit calls possible.
 ) -> None:
-    # Angel login is the bootstrap endpoint. It still requires HTTPS in production
-    # and validates the supplied Angel One credentials before issuing a session.
-    if request is not None and request.url.path.endswith("/angel/login"):
-        return
+    # Vandana1-compatible flow:
+    #   optional backend app token -> Angel login -> short-lived session token.
+    # There is deliberately no Terminal API Key field in the APK/frontend.
+    settings = get_settings()
+    key = (settings.api_token or os.getenv("API_TOKEN") or os.getenv("TERMINAL_API_KEY") or "").strip()
+    provided = (x_token or x_app_key or x_api_key or "").strip()
 
-    key = os.getenv("TERMINAL_API_KEY", "")
-    if key and hmac.compare_digest(x_api_key, key):
+    # Angel bootstrap remains usable without a separate app token when none is configured.
+    if request is not None and request.url.path.endswith("/angel/login"):
+        if key and provided and hmac.compare_digest(provided, key):
+            return
+        if not key or not provided:
+            return
+
+    if key and provided and hmac.compare_digest(provided, key):
         return
 
     now = time.time()
-    # Opportunistic cleanup.
     expired = [k for k, exp in _sessions.items() if exp <= now]
     for k in expired:
         _sessions.pop(k, None)
@@ -108,8 +117,9 @@ def guard(
         return
 
     if not key:
-        raise HTTPException(503, "TERMINAL_API_KEY is not set on the server")
-    raise HTTPException(401, "bad API key or expired session")
+        # Same behavior as Vandana1 when API_TOKEN is not configured: no app-token gate.
+        return
+    raise HTTPException(401, "backend app token rejected or session expired")
 
 
 def online() -> None:
