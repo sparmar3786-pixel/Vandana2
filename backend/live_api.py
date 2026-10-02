@@ -316,8 +316,16 @@ def build_router(get_engine: Callable[[], Any]) -> APIRouter:
             d = (await c._post_raw("/rest/auth/angelbroking/user/v1/loginByPassword",
                                    {"clientcode": cid, "password": pin, "totp": totp}, authed=False)).get("data") or {}
         except Exception as e:
-            log.warning("angel login failed: {}", type(e).__name__)
-            raise HTTPException(401, "Angel One login failed (check client id / PIN / TOTP)")
+            # Keep secrets out of logs/responses, but surface Angel's actual
+            # rejection reason so the APK can distinguish bad TOTP/PIN/API-key
+            # from a backend connectivity problem.
+            raw = str(e)
+            for secret in (api_key, cid, pin, totp):
+                if secret:
+                    raw = raw.replace(secret, "[REDACTED]")
+            safe = raw[:300] or "Angel One login failed"
+            log.warning("angel login rejected: {}", safe)
+            raise HTTPException(401, {"code": "ANGEL_LOGIN_REJECTED", "message": safe})
         if not d.get("jwtToken"):
             raise HTTPException(401, "Angel One returned no token")
         c.jwt, c.feed_token = d["jwtToken"], d.get("feedToken")
