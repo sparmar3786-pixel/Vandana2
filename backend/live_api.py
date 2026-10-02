@@ -40,8 +40,7 @@ LIM = {"ONE_MINUTE": 30, "THREE_MINUTE": 60, "FIVE_MINUTE": 100, "TEN_MINUTE": 1
        "FIFTEEN_MINUTE": 200, "THIRTY_MINUTE": 200, "ONE_HOUR": 400, "ONE_DAY": 2000}
 
 _net = {"offline": False}
-# Short-lived app sessions let the APK complete Angel login even when a stale
-# Terminal API Key is present on the device. Sessions are memory-only and expire.
+# Short-lived app sessions are memory-only and expire after the configured TTL.
 _SESSION_TTL_SECONDS = int(os.getenv("TERMINAL_SESSION_TTL", "43200"))
 _sessions: Dict[str, float] = {}
 
@@ -92,7 +91,7 @@ def guard(
 ) -> None:
     # Vandana1-compatible flow:
     #   optional backend app token -> Angel login -> short-lived session token.
-    # There is deliberately no Terminal API Key field in the APK/frontend.
+    # The APK/frontend never stores a separate terminal authentication key.
     settings = get_settings()
     key = (settings.api_token or os.getenv("API_TOKEN") or "").strip()
     def hv(v: Any) -> str:
