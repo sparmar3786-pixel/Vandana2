@@ -110,7 +110,10 @@ def _mcp_servers() -> List[dict]:
     out = []
     for n in cfg.get("live_order") or ["nse-live"]:
         x = by.get(n)
-        if not x or not x.get("enabled", True) or x.get("transport") != "sse":
+        if not x or not x.get("enabled", True):
+            continue
+        transport = str(x.get("transport", "streamable-http")).lower()
+        if transport not in {"sse", "streamable-http", "streamable_http"}:
             continue
         url = os.path.expandvars(str(x.get("url", "")))
         if url and "${" not in url:
@@ -119,17 +122,29 @@ def _mcp_servers() -> List[dict]:
 
 
 async def mcp_call(tool: str, args: dict) -> Optional[dict]:
-    """One short-lived SSE session per call (robust; results are cached by `via`)."""
+    """Call the configured remote NSE MCP server over Streamable HTTP or legacy SSE."""
     tok = os.getenv("NSE_MCP_TOKEN", "")
     hd = {"Authorization": "Bearer " + tok} if tok else None
     for x in _mcp_servers():
+        transport = str(x.get("transport", "streamable-http")).lower()
         try:
             from mcp import ClientSession
-            from mcp.client.sse import sse_client
-            async with sse_client(x["url"], headers=hd) as (rd, wr):
-                async with ClientSession(rd, wr) as sess:
-                    await sess.initialize()
-                    res = await asyncio.wait_for(sess.call_tool(tool, args), float(x.get("timeout_sec", 20)))
+            if transport in {"streamable-http", "streamable_http"}:
+                from mcp.client.streamable_http import streamablehttp_client
+                async with streamablehttp_client(x["url"], headers=hd) as (rd, wr, _):
+                    async with ClientSession(rd, wr) as sess:
+                        await sess.initialize()
+                        res = await asyncio.wait_for(
+                            sess.call_tool(tool, args), float(x.get("timeout_sec", 20))
+                        )
+            else:
+                from mcp.client.sse import sse_client
+                async with sse_client(x["url"], headers=hd) as (rd, wr):
+                    async with ClientSession(rd, wr) as sess:
+                        await sess.initialize()
+                        res = await asyncio.wait_for(
+                            sess.call_tool(tool, args), float(x.get("timeout_sec", 20))
+                        )
             if getattr(res, "isError", False):
                 continue
             for b in res.content or []:
@@ -138,7 +153,6 @@ async def mcp_call(tool: str, args: dict) -> Optional[dict]:
         except Exception as e:
             log.warning("mcp {} {} failed: {}", x.get("name"), tool, type(e).__name__)
     return None
-
 
 _via_cache: Dict[str, tuple] = {}
 

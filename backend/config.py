@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     angel_pin: str = ""
     angel_totp_secret: str = ""
     angel_refresh_token: str = ""
-    angel_base_url: str = "https://apiconnect.angelbroking.com"
+    angel_base_url: str = "https://apiconnect.angelone.in"
     angel_ws_url: str = "wss://smartapisocket.angelone.in/smart-stream"
     angel_publisher_login: str = "https://smartapi.angelone.in/publisher-login"
 

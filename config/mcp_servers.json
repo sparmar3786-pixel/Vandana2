@@ -11,7 +11,7 @@
     {
       "name": "nse-live",
       "enabled": true,
-      "transport": "sse",
+      "transport": "streamable-http",
       "url": "${NSE_MCP_URL}",
       "timeout_sec": 20
     }

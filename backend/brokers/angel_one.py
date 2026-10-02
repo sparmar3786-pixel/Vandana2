@@ -26,7 +26,7 @@ from backend.models import Snapshot, StrikeSnapshot, Tick
 EXCHANGE_SEGMENT = {"NSE_CM": 1, "NSE_FO": 2, "BSE_CM": 3, "BSE_FO": 4}
 SEGMENT_EXCHANGE = {"NSE": "NSE_CM", "NFO": "NSE_FO", "BSE": "BSE_CM", "BFO": "BSE_FO"}
 INDEX_UNDERLYING = {"NIFTY":"NIFTY","BANKNIFTY":"BANKNIFTY","FINNIFTY":"FINNIFTY","MIDCPNIFTY":"MIDCPNIFTY","SENSEX":"SENSEX","BANKEX":"BANKEX"}
-INSTRUMENT_MASTER_URL = "https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json"
+INSTRUMENT_MASTER_URL = "https://margincalculator.angelone.in/OpenAPI_File/files/OpenAPIScripMaster.json"
 AUTH_ERROR_CODES = {"AG8001","AB1010","AG8002","AB2001"}
 
 class _AsyncRateLimiter:
