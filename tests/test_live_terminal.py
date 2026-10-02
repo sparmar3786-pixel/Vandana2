@@ -1,9 +1,11 @@
 import asyncio
 
+import pytest
+from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
 
-def test_live_router_is_mounted_and_api_guard_fails_closed(monkeypatch):
+def test_live_router_is_mounted_and_api_guard_modes(monkeypatch):
     monkeypatch.delenv("TERMINAL_API_KEY", raising=False)
     monkeypatch.delenv("API_TOKEN", raising=False)
     from backend.app import app
@@ -13,7 +15,15 @@ def test_live_router_is_mounted_and_api_guard_fails_closed(monkeypatch):
     assert "/api/live/net" in paths
     assert any(getattr(route, "path", None) == "/terminal.html" for route in app.routes)
 
+    # No app-token is configured in the local test environment, so Angel
+    # bootstrap/login remains available.
     guard("")
+
+    monkeypatch.setenv("API_TOKEN", "expected-app-token")
+    guard("expected-app-token")
+    with pytest.raises(HTTPException) as exc:
+        guard("wrong-app-token")
+    assert exc.value.status_code == 401
 
 
 def test_terminal_page_is_a_file_response():
