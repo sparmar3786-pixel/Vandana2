@@ -28,7 +28,9 @@ def test_terminal_login_has_no_terminal_api_key_controls():
     from pathlib import Path
 
     html = Path("frontend/terminal.html").read_text(encoding="utf-8")
-    assert 'Terminal API Key' not in html
+    assert 'id=lk type=password' not in html
+    assert 'saveTerminalKey' not in html
+    assert 'toggleTerminalKey' not in html
     assert 'id=la type=password' in html
     assert 'Secure login' in html
 
