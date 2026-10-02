@@ -23,12 +23,10 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   String mcpStatus='MCP status not checked';
   String sessionToken='';
   final TextEditingController backendController=TextEditingController(text:'https://nse-algo-backend-live-production.up.railway.app');
-  final TextEditingController terminalApiKeyController=TextEditingController();
   final TextEditingController angelApiKeyController=TextEditingController();
   final TextEditingController clientIdController=TextEditingController();
   final TextEditingController pinController=TextEditingController();
   final TextEditingController totpController=TextEditingController();
-  bool showTerminalApiKey=false;
   bool showAngelApiKey=false;
   String loginStatus='';
   final GlobalKey<ScaffoldMessengerState> _messengerKey = GlobalKey<ScaffoldMessengerState>();
@@ -119,11 +117,8 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
 
   Map<String,String> _authHeaders({bool jsonBody=false}){
     final h=<String,String>{};
-    final key=terminalApiKeyController.text.trim();
-    if(key.isNotEmpty){
-      h['X-API-Key']=key;
-      h['X-Token']=key;
-    }
+    // Protected live routes use the short-lived session token issued by
+    // the backend after successful Angel One login.
     if(sessionToken.isNotEmpty){
       h['X-Session-Token']=sessionToken;
     }
@@ -135,7 +130,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     var base=backendUrl.trim();
     while(base.endsWith('/')) { base=base.substring(0,base.length-1); }
     if(base.isEmpty){setState(()=>loginStatus='Backend URL required. Open Angel One API and set it first.');return;}
-    // Terminal API Key is optional for login; a successful Angel login issues a short-lived session token.
+    // Angel login issues a short-lived session token for protected live routes.
     setState(()=>loginStatus='Connecting to Angel One…');
     try{
       final headers=_authHeaders(jsonBody:true);
@@ -174,9 +169,6 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     const SizedBox(height:8),
     _info('Backend URL is pre-filled with the Railway production backend. You can edit it when needed.',Icons.cloud),
     const SizedBox(height:4),
-    _info('Terminal API Key authenticates this APK to your backend.',Icons.vpn_key),
-    TextField(controller:terminalApiKeyController,obscureText:!showTerminalApiKey,decoration:InputDecoration(labelText:'Terminal API Key',hintText:'Enter terminal key',prefixIcon:const Icon(Icons.key),suffixIcon:IconButton(tooltip:showTerminalApiKey?'Hide':'Show',onPressed:()=>setState(()=>showTerminalApiKey=!showTerminalApiKey),icon:Icon(showTerminalApiKey?Icons.visibility_off:Icons.visibility)))),
-    const SizedBox(height:8),
     _info('Angel One API Key is editable separately and is sent only for Angel login.',Icons.api),
     TextField(controller:angelApiKeyController,obscureText:!showAngelApiKey,decoration:InputDecoration(labelText:'Angel One API Key',hintText:'Enter Angel One API key',prefixIcon:const Icon(Icons.key),suffixIcon:IconButton(tooltip:showAngelApiKey?'Hide':'Show',onPressed:()=>setState(()=>showAngelApiKey=!showAngelApiKey),icon:Icon(showAngelApiKey?Icons.visibility_off:Icons.visibility)))),
     const SizedBox(height:8),
@@ -214,15 +206,14 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       try{j=jsonDecode(r.body) as Map<String,dynamic>;}catch(_){}
 
       if(r.statusCode==401 || r.statusCode==503){
-        // Do not block the user on a stale/missing Terminal API Key.
-        // Try the Angel One bootstrap login; the backend will issue a short-lived
+        // Try Angel One bootstrap login; the backend will issue a short-lived
         // X-Session-Token after successful Angel authentication.
         final hasAngelCredentials=
             angelApiKeyController.text.trim().isNotEmpty &&
             clientIdController.text.trim().isNotEmpty &&
             pinController.text.trim().isNotEmpty &&
             totpController.text.trim().isNotEmpty;
-        if(hasAngelCredentials || terminalApiKeyController.text.trim().isEmpty){
+        if(hasAngelCredentials){
           setState(()=>apiStatus='Backend reachable • authenticating Angel One…');
           await _loginAngel();
           if(loginStatus.startsWith('Angel One connected')){
@@ -235,7 +226,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
         }
         setState(()=>apiStatus=r.statusCode==503
             ?'Backend reachable • enter Angel One credentials to create a session'
-            :'Backend reachable • Terminal API Key rejected. Enter valid Angel One credentials and tap Connect to establish a session.');
+            :'Backend reachable • Angel One login required. Enter valid credentials and tap Connect.');
         return;
       }
       if(r.statusCode<300 && j['connected']==true){
@@ -255,7 +246,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       if(hasAngelCredentials){
         setState(()=>apiStatus='Backend authenticated • logging in to Angel One…');
         await _loginAngel();
-        if(loginStatus=='Angel One connected'){
+        if(loginStatus.startsWith('Angel One connected')){
           setState(()=>apiStatus='✅ Angel One connected • live terminal ready');
           await _loadCandles();
           await _loadAiLayers();
@@ -478,17 +469,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       onChanged:(v)=>backendUrl=v,
     ),
     const SizedBox(height:8),
-    _info('Live backend: Railway production service. Terminal key is optional for Angel bootstrap; a short-lived session is issued after successful login.',Icons.cloud_done),
-    TextField(
-      controller:terminalApiKeyController,
-      obscureText:true,
-      decoration:const InputDecoration(
-        labelText:'Terminal API Key',
-        hintText:'Optional — used for direct backend authentication',
-        prefixIcon:Icon(Icons.key),
-      ),
-    ),
-    const SizedBox(height:8),
+    _info('Live backend: Railway production service. Angel login issues a short-lived session for protected live routes.',Icons.cloud_done),
     TextField(
       controller:angelApiKeyController,
       obscureText:!showAngelApiKey,
@@ -541,7 +522,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     const SizedBox(height:8),
     _row('Broker','Angel One SmartAPI',apiStatus),
     _info(
-      'Terminal API Key authenticates the APK to the backend. Angel One API key/client ID/PIN/TOTP are only sent to the configured backend for login.',
+      'The APK uses the short-lived backend session issued after Angel One login. Angel One credentials are sent only to the configured backend for login.',
       Icons.security,
     ),
     _setting('Live quote','SmartAPI FULL + WebSocket'),
