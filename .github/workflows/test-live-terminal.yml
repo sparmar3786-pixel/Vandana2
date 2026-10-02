@@ -8,6 +8,7 @@ on:
   pull_request:
 
 jobs:
+  # Live integration regression gate
   test-live-terminal:
     runs-on: ubuntu-latest
     steps:
