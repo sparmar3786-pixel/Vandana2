@@ -77,7 +77,7 @@ def _build():
 
 def main():
  setup_logging();p=argparse.ArgumentParser(description="NSE MCP server")
- p.add_argument("--transport",choices=["stdio","sse"],default=_settings.nse_mcp_transport);p.add_argument("--port",type=int,default=_settings.nse_mcp_sse_port)
+ p.add_argument("--transport",choices=["stdio","sse","streamable-http"],default=_settings.nse_mcp_transport);p.add_argument("--port",type=int,default=_settings.nse_mcp_sse_port)
  a=p.parse_args();mcp=_build();log.info("nse-mcp starting (transport={})",a.transport)
  if a.transport=="sse":
   import uvicorn
@@ -86,5 +86,7 @@ def main():
   async def health(_request): return PlainTextResponse("ok")
   app.add_route("/health", health, methods=["GET"])
   uvicorn.run(app,host="0.0.0.0",port=a.port)
+ elif a.transport=="streamable-http":
+  mcp.run(transport="streamable-http",host="0.0.0.0",port=a.port)
  else:mcp.run(transport="stdio")
 if __name__=="__main__":main()
