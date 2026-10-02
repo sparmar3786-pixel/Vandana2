@@ -3,7 +3,8 @@ main = "src/index.ts"
 compatibility_date = "2026-10-01"
 
 [vars]
-BACKEND_ORIGIN = "https://REPLACE_WITH_BACKEND_HOST"
+# Set this to the HTTPS DNS name backed by the Oracle Cloud VM.
+BACKEND_ORIGIN = "https://REPLACE_WITH_ORACLE_API_DOMAIN"
 
 [assets]
 directory = "../frontend"
