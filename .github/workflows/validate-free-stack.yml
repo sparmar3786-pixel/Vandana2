@@ -49,10 +49,12 @@ jobs:
           grep -q 'caddy:2-alpine' deploy/oracle/docker-compose.yml
           grep -q '443:443' deploy/oracle/docker-compose.yml
 
-      - name: Block legacy hosted-backend references
+      - name: Block legacy Render references
         run: |
-          ! grep -Rqi 'onrender.com' cloudflare-worker deploy .github
-          ! grep -Rqi 'render.com' cloudflare-worker deploy .github
+          ! grep -Rqi 'onrender.com' cloudflare-worker deploy --exclude='README.md'
+          ! grep -Rqi 'render.com' cloudflare-worker deploy --exclude='README.md'
+          ! grep -Rqi 'onrender.com' flutter_app/lib
+          ! grep -Rqi 'render.com' flutter_app/lib
 
       - name: Validate Supabase migration
         run: |
