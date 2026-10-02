@@ -249,6 +249,8 @@ def build_router(get_engine: Callable[[], Any]) -> APIRouter:
             raise HTTPException(400, "need Angel One API key + client_id + PIN + TOTP")
         if hasattr(c, "api_key_override"):
             c.api_key_override = api_key
+        if hasattr(c, "client_id_override"):
+            c.client_id_override = cid
         try:
             d = (await c._post_raw("/rest/auth/angelbroking/user/v1/loginByPassword",
                                    {"clientcode": cid, "password": pin, "totp": totp}, authed=False)).get("data") or {}
