@@ -116,7 +116,7 @@ const LS={g(k){try{return localStorage.getItem(k)}catch(e){return null}},s(k,v){
 let LIVE=false,OC={t:0,sym:'NIFTY'},HM='NIFTY',HMM=0,PV='NIFTY',FNO=[];
 const LIVE_SCREENS=new Set([2,3,4,5,6,7,14,17,26,28]),I6=['NIFTY','BANKNIFTY','FINNIFTY','MIDCPNIFTY','SENSEX','BANKEX'],dpr=window.devicePixelRatio||1;
 const key=()=>LS.g('tk')||'';
-async function api(p,o={}){const r=await fetch('/api/live'+p,{...o,headers:{'X-API-Key':key(),'Content-Type':'application/json'}});if(!r.ok){let m='HTTP '+r.status;try{const d=(await r.json()).detail;m=typeof d=='string'?d:JSON.stringify(d)}catch(e){}throw new Error(m)}return r}
+async function api(p,o={}){const r=await fetch(backend()+'/api/live'+p,{...o,headers:{...(o.headers||{}),'X-API-Key':key(),'Content-Type':'application/json'}});if(!r.ok){let m='HTTP '+r.status;try{const d=(await r.json()).detail;m=typeof d=='string'?d:JSON.stringify(d)}catch(e){}throw new Error(m)}return r}
 const J=async(p,o)=>(await api(p,o)).json();
 const lz=fn=>{const id='z'+Math.random().toString(36).slice(2,8),c=cur;setTimeout(async()=>{let h;try{h=await fn()}catch(e){h=`<p class=bad>${esc(e.message)}</p>`}const el=document.getElementById(id);if(el&&cur==c)el.innerHTML=h},0);return `<div id=${id} class=mu>Loading…</div>`};
 const lv=(i,live)=>{const d=ST[i][2];ST[i][2]=()=>LIVE?live():d()};
