@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     angel_base_url: str = "https://apiconnect.angelone.in"
     angel_ws_url: str = "wss://smartapisocket.angelone.in/smart-stream"
     angel_publisher_login: str = "https://smartapi.angelone.in/publisher-login"
+    # Optional app-level token, compatible with Vandana1's x-token flow.
+    # Leave empty to allow Angel bootstrap login without a separate terminal key.
+    api_token: str = ""
 
     # ---------------- engine ----------------
     advanced_engine: str = "on"
