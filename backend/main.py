@@ -272,7 +272,7 @@ async def api_candles(index:str, interval:str="FIVE_MINUTE", days:int=5) -> Dict
 async def ws_endpoint(ws: WebSocket, key: str | None = Query(default=None)) -> None:
     if key:
         import hmac, os
-        expected = os.getenv("VM_SECRET") or os.getenv("TERMINAL_API_KEY", "")
+        expected = os.getenv("VM_SECRET", "")
         if not expected or not hmac.compare_digest(key, expected):
             await ws.close(code=1008)
             return
