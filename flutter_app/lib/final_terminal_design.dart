@@ -140,7 +140,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       final totp=totpController.text.trim();
 
       var response=await http.post(
-        Uri.parse('$base/v1/angel/login'),
+        Uri.parse('$base/api/live/angel/login'),
         headers:headers,
         body:jsonEncode({
           'clientId':clientId.isEmpty?null:clientId,
@@ -149,19 +149,6 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
           'apiKey':angelKey.isEmpty?null:angelKey,
         }),
       ).timeout(const Duration(seconds:20));
-
-      if(response.statusCode==404 || response.statusCode==405){
-        response=await http.post(
-          Uri.parse('$base/api/live/angel/login'),
-          headers:headers,
-          body:jsonEncode({
-            'client_id':clientId.isEmpty?null:clientId,
-            'pin':pin.isEmpty?null:pin,
-            'totp':totp.isEmpty?null:totp,
-            'api_key':angelKey.isEmpty?null:angelKey,
-          }),
-        ).timeout(const Duration(seconds:20));
-      }
 
       final j=jsonDecode(response.body);
       if(response.statusCode<300 && j is Map && j['connected']==true){
@@ -203,11 +190,16 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     while(base.endsWith('/')) { base=base.substring(0,base.length-1); }
     if(base.isEmpty){setState(()=>apiStatus='Enter backend URL first');return;}
     try{
-      final r=await http.post(Uri.parse('$base/api/live/angel/token'),headers:_authHeaders()).timeout(const Duration(seconds:12));
-      final j=jsonDecode(r.body) as Map<String,dynamic>;
-      setState(()=>apiStatus=r.statusCode<300 && j['connected']==true?'Angel One connected':'Connection failed');
+      final h=await http.get(Uri.parse('$base/health')).timeout(const Duration(seconds:12));
+      if(h.statusCode<200 || h.statusCode>=300){setState(()=>apiStatus='Backend HTTP '+h.statusCode.toString());return;}
+      final r=await http.get(Uri.parse('$base/api/live/angel/token'),headers:_authHeaders()).timeout(const Duration(seconds:12));
+      Map<String,dynamic> j={};
+      try{j=jsonDecode(r.body) as Map<String,dynamic>;}catch(_){}
+      if(r.statusCode==401){setState(()=>apiStatus='Backend reachable • Terminal API Key rejected');return;}
+      if(r.statusCode==503){setState(()=>apiStatus='Backend reachable • TERMINAL_API_KEY missing on server');return;}
+      setState(()=>apiStatus=r.statusCode<300 && j['connected']==true?'Angel One connected':r.statusCode<300?'Backend connected • Angel login required':'Backend API error '+r.statusCode.toString());
       if(r.statusCode<300){await _loadCandles(); await _loadAiLayers();}
-    }catch(_){setState(()=>apiStatus='Backend connection failed');}
+    }catch(_){setState(()=>apiStatus='Backend connection failed • check URL/network');}
   }
 
   Future<void> _loadCandles() async {
