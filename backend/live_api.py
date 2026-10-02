@@ -94,10 +94,10 @@ def guard(
     #   optional backend app token -> Angel login -> short-lived session token.
     # There is deliberately no Terminal API Key field in the APK/frontend.
     settings = get_settings()
-    key = (settings.api_token or os.getenv("API_TOKEN") or os.getenv("TERMINAL_API_KEY") or "").strip()
+    key = (settings.api_token or os.getenv("API_TOKEN") or "").strip()
     provided = (x_token or x_app_key or x_api_key or "").strip()
 
-    # Angel bootstrap remains usable without a separate app token when none is configured.
+    # Angel bootstrap remains usable without an app token when none is configured.
     if request is not None and request.url.path.endswith("/angel/login"):
         if key and provided and hmac.compare_digest(provided, key):
             return
