@@ -77,12 +77,12 @@ class Settings(BaseSettings):
     puter_auth_token: str = ""
     puter_api_base: str = "https://api.puter.com"
 
-    ai_model_l1: str = "gpt-5.6-luna"
-    ai_model_l2: str = "claude-sonnet-4.6"
-    ai_model_l3: str = "gpt-5.6-sol"
-    ai_model_l4: str = "deepseek-chat"
-    ai_model_l5: str = "gemini-2.5-flash"
-    ai_model_l6: str = "grok-4"
+    ai_model_l1: str = "gemini-2.5-flash-lite"
+    ai_model_l2: str = "groq/openai/gpt-oss-20b"
+    ai_model_l3: str = "cerebras/llama-3.3-70b"
+    ai_model_l4: str = "deepseek/deepseek-chat"
+    ai_model_l5: str = "cloudflare/@cf/zai-org/glm-4.7-flash"
+    ai_model_l6: str = "ollama/llama3.2"
     ai_web_search: str = "on"
 
     openai_api_key: str = ""
@@ -91,6 +91,11 @@ class Settings(BaseSettings):
     google_api_key: str = ""
     xai_api_key: str = ""
     openai_base_url: str = ""
+    groq_api_key: str = ""
+    cerebras_api_key: str = ""
+    cloudflare_ai_api_key: str = ""
+    cloudflare_ai_base_url: str = ""
+    ollama_base_url: str = "http://127.0.0.1:11434/v1"
 
     # ---------------- MCP ----------------
     mcp_enabled: str = "on"
@@ -98,12 +103,20 @@ class Settings(BaseSettings):
     nse_mcp_transport: str = "stdio"
     nse_mcp_sse_port: int = 8765
 
+    # ---------------- durable cloud memory ----------------
+    supabase_url: str = ""
+    supabase_service_key: str = ""
+
     # ---------------- server ----------------
     host: str = "0.0.0.0"
     port: int = 8000
     log_level: str = "INFO"
     db_path: str = "data/strategy_memory.sqlite"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+
+    @property
+    def supabase_enabled(self) -> bool:
+        return bool(self.supabase_url and self.supabase_service_key)
 
     # ---------------------------- helpers ----------------------------
     @property

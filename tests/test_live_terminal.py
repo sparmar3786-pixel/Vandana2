@@ -25,7 +25,7 @@ def test_terminal_page_is_a_file_response():
 
     response = asyncio.run(terminal_page())
     assert isinstance(response, FileResponse)
-    assert response.path.endswith("frontend/terminal.html")
+    assert str(response.path).endswith("frontend/terminal.html")
 
 
 def test_terminal_login_has_editable_api_key_controls():

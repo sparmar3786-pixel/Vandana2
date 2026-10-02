@@ -10,7 +10,7 @@ class FinalTerminalDesign extends StatefulWidget {
 class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   ThemeMode mode=ThemeMode.light;
   int tab=0;
-  String backendUrl='https://vandana2-nse-backend.onrender.com';
+  String backendUrl=String.fromEnvironment('VANDANA2_API_URL', defaultValue='');
   String selectedIndex='NIFTY 50';
   String selectedTimeframe='FIVE_MINUTE';
   final Set<String> selectedIndicators={'EMA 8','EMA 13','EMA 20/50','VWAP','RSI','MACD','ATR','Bollinger'};

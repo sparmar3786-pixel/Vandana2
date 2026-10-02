@@ -1,0 +1,39 @@
+services:
+  vandana2-api:
+    build:
+      context: ../..
+      dockerfile: deploy/oracle/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    expose:
+      - "8000"
+    volumes:
+      - vandana2-data:/app/data
+    networks:
+      - vandana2
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - vandana2-api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - vandana2
+
+networks:
+  vandana2:
+
+volumes:
+  vandana2-data:
+  caddy-data:
+  caddy-config:

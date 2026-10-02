@@ -1,0 +1,64 @@
+name: Vandana2 free-stack validation
+
+on:
+  push:
+    branches:
+      - feature/free-edge-6ai-stack
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install backend dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile backend
+        run: python -m compileall -q backend
+
+      - name: Validate core imports
+        run: |
+          python -c "from backend.app import app; print('backend.app: OK')"
+          python -c "from backend.ai.provider_client import ProviderClient; print('provider_client: OK')"
+          python -c "from backend.memory.hybrid_memory import HybridMemory; print('hybrid_memory: OK')"
+          python -c "from backend.platform_router import router; print('platform_router: OK')"
+
+      - name: Validate edge worker files
+        run: |
+          test -f cloudflare-worker/wrangler.toml
+          test -f cloudflare-worker/package.json
+          test -f cloudflare-worker/src/index.ts
+          grep -q 'BACKEND_ORIGIN' cloudflare-worker/wrangler.toml
+          grep -q 'ASSETS' cloudflare-worker/src/index.ts
+          grep -q 'ORACLE' cloudflare-worker/wrangler.toml
+
+      - name: Validate Oracle deployment
+        run: |
+          test -f deploy/oracle/Dockerfile
+          test -f deploy/oracle/docker-compose.yml
+          test -f deploy/oracle/Caddyfile
+          test -f deploy/oracle/.env.example
+          test -f deploy/oracle/README.md
+          grep -q 'backend.main:app' deploy/oracle/Dockerfile
+          grep -q 'caddy:2-alpine' deploy/oracle/docker-compose.yml
+          grep -q '443:443' deploy/oracle/docker-compose.yml
+
+      - name: Block legacy Render references
+        run: |
+          ! grep -Rqi 'onrender.com' cloudflare-worker deploy --exclude='README.md'
+          ! grep -Rqi 'render.com' cloudflare-worker deploy --exclude='README.md'
+          ! grep -Rqi 'onrender.com' flutter_app/lib
+          ! grep -Rqi 'render.com' flutter_app/lib
+
+      - name: Validate Supabase migration
+        run: |
+          test -f supabase/migrations/001_vandana2_memory.sql
+          grep -q 'strategy_memory' supabase/migrations/001_vandana2_memory.sql
+          grep -q 'trade_memory' supabase/migrations/001_vandana2_memory.sql
+          grep -q 'ai_memory' supabase/migrations/001_vandana2_memory.sql

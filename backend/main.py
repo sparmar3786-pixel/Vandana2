@@ -32,11 +32,11 @@ from pydantic import BaseModel
 from backend.config import get_settings
 from backend.logging_config import get_logger, setup_logging
 from backend.memory.strategy_memory import StrategyMemory
+from backend.memory.hybrid_memory import HybridMemory
 from backend.pipeline.orchestrator import TerminalEngine
 from backend.strategies.registry import get_meta
 from backend.strategies.catalog import STRATEGY_REGISTRY, strategy_search
 from backend.ai.six_layer_ai import LAYERS
-from backend.live_api import build_router
 
 log = get_logger("api")
 
@@ -96,7 +96,8 @@ async def lifespan(app: FastAPI):
     log.info("starting nse-ai-terminal (source={}, advanced={})",
              settings.data_source, settings.advanced_engine)
 
-    state.memory = StrategyMemory(settings.db_path)
+    local_memory = StrategyMemory(settings.db_path)
+    state.memory = HybridMemory(local_memory, settings.supabase_url, settings.supabase_service_key)
     state.engine = TerminalEngine(memory=state.memory, broadcaster=manager.broadcast)
 
     if state.engine:
@@ -125,7 +126,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(build_router(lambda: state.engine))
 
 
 # ----------------------------- REST -----------------------------
