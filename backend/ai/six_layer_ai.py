@@ -9,12 +9,12 @@ from backend.config import Settings
 
 WEB_SEARCH_TOOL={"type":"web_search"}
 LAYERS=[
- {"id":"L1","name":"GPT-5.6 Luna","role":"data collection / candidate analysis","env":"ai_model_l1","web":True},
- {"id":"L2","name":"Claude Sonnet 4.6","role":"data verification","env":"ai_model_l2","web":False},
- {"id":"L3","name":"GPT-5.6 Sol","role":"independent validation","env":"ai_model_l3","web":True},
- {"id":"L4","name":"DeepSeek Chat","role":"quantitative / OI audit","env":"ai_model_l4","web":False},
- {"id":"L5","name":"Gemini 2.5 Flash","role":"market structure analysis","env":"ai_model_l5","web":True},
- {"id":"L6","name":"Grok 4","role":"final risk audit / cross verification","env":"ai_model_l6","web":False},
+ {"id":"L1","name":"Gemini Flash-Lite","role":"fast candidate analysis","env":"ai_model_l1","web":False},
+ {"id":"L2","name":"Groq GPT-OSS","role":"fast data verification","env":"ai_model_l2","web":False},
+ {"id":"L3","name":"Cerebras Llama","role":"independent validation","env":"ai_model_l3","web":False},
+ {"id":"L4","name":"DeepSeek","role":"quantitative / OI audit","env":"ai_model_l4","web":False},
+ {"id":"L5","name":"Cloudflare GLM","role":"market structure analysis","env":"ai_model_l5","web":False},
+ {"id":"L6","name":"Ollama Local","role":"final local risk audit","env":"ai_model_l6","web":False},
 ]
 _SYSTEM=("You are a market-data VALIDATION layer inside an options terminal. "
 "You may ONLY verify, cross-check and flag the deterministic engine output. "
