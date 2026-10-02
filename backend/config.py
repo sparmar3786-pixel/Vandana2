@@ -98,12 +98,20 @@ class Settings(BaseSettings):
     nse_mcp_transport: str = "stdio"
     nse_mcp_sse_port: int = 8765
 
+    # ---------------- durable cloud memory ----------------
+    supabase_url: str = ""
+    supabase_service_key: str = ""
+
     # ---------------- server ----------------
     host: str = "0.0.0.0"
     port: int = 8000
     log_level: str = "INFO"
     db_path: str = "data/strategy_memory.sqlite"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+
+    @property
+    def supabase_enabled(self) -> bool:
+        return bool(self.supabase_url and self.supabase_service_key)
 
     # ---------------------------- helpers ----------------------------
     @property
