@@ -37,7 +37,7 @@ class _TerminalState extends State<Terminal> {
     Icons.tune, Icons.more_horiz, Icons.schema, Icons.psychology, Icons.health_and_safety
   ];
   int selected = 0;
-  String backendUrl = 'https://vandana1-angel-api.onrender.com';
+  String backendUrl = 'https://nse-algo-backend-live-production.up.railway.app';
   String apiToken = 'change-me';
   String connection = 'Connecting...';
   bool angelConnected = false;
