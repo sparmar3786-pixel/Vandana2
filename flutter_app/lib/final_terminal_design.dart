@@ -20,6 +20,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   String aiStatus='AI validation not connected';
   String chartSection='Indices';
   String apiStatus='Backend URL required';
+  String mcpStatus='MCP status not checked';
   final TextEditingController backendController=TextEditingController(text:'https://nse-algo-backend-production.up.railway.app');
   final TextEditingController terminalApiKeyController=TextEditingController();
   final TextEditingController angelApiKeyController=TextEditingController();
@@ -198,7 +199,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       if(r.statusCode==401){setState(()=>apiStatus='Backend reachable • Terminal API Key rejected');return;}
       if(r.statusCode==503){setState(()=>apiStatus='Backend reachable • TERMINAL_API_KEY missing on server');return;}
       setState(()=>apiStatus=r.statusCode<300 && j['connected']==true?'Angel One connected':r.statusCode<300?'Backend connected • Angel login required':'Backend API error '+r.statusCode.toString());
-      if(r.statusCode<300){await _loadCandles(); await _loadAiLayers();}
+      if(r.statusCode<300){await _loadCandles(); await _loadAiLayers(); await _loadMcpStatus();}
     }catch(_){setState(()=>apiStatus='Backend connection failed • check URL/network');}
   }
 
@@ -228,6 +229,23 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
         setState(()=>aiLayers=(j['layers'] as List? ?? const[]).whereType<Map>().map((x)=>Map<String,dynamic>.from(x)).toList());
       }
     }catch(_){}
+  }
+
+  Future<void> _loadMcpStatus() async {
+    var base=backendUrl.trim();
+    while(base.endsWith('/')) { base=base.substring(0,base.length-1); }
+    if(base.isEmpty)return;
+    try{
+      final r=await http.get(Uri.parse('$base/api/live/mcp/status'),headers:_authHeaders()).timeout(const Duration(seconds:15));
+      Map<String,dynamic> j={}; try{j=jsonDecode(r.body) as Map<String,dynamic>;}catch(_){}
+      if(r.statusCode==200){
+        final reachable=j['reachable']==true;
+        final usable=(j['live_usable'] is List)?(j['live_usable'] as List).join(', '):'none';
+        setState(()=>mcpStatus=reachable?'MCP reachable • '+usable:'MCP server not reachable • '+usable);
+      }else{
+        setState(()=>mcpStatus='MCP status HTTP '+r.statusCode.toString());
+      }
+    }catch(_){setState(()=>mcpStatus='MCP connection check failed');}
   }
 
   Future<void> _runAiValidation() async {
@@ -498,7 +516,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Widget _models()=>Column(children:[_setting('Provider','Puter.js • Zero Key'),_setting('Catalogue','Runtime listModels()'),
     ...['GPT-5.6 Luna','Claude Sonnet 4.6','GPT-5.6 Sol','DeepSeek Chat','Gemini 2.5 Flash','Grok 4'].map((x)=>_row(x,'Runtime check',''))]);
 
-  Widget _feed()=>Column(children:[_row('Angel One','Awaiting live connection','—'),_row('NSE Public','Standby','—'),_row('NSE MCP','Awaiting live source','—'),_grid([['Latency','—','Live'],['Freshness','—','Live'],['Gaps','—','Live'],['Sync','—','Live']])]);
+  Widget _feed()=>Column(children:[_row('Backend',apiStatus,'Live'),_row('Angel One','Live SmartAPI','—'),_row('NSE MCP',mcpStatus,'Live'),_grid([['Latency','—','Live'],['Freshness','—','Live'],['Gaps','—','Live'],['Sync','—','Live']]),FilledButton.icon(onPressed:_connectBackend,icon:const Icon(Icons.sync),label:const Text('CHECK LIVE CONNECTION'))]);
 
   Widget _btSettings()=>Column(children:[_setting('Strategy family','All families'),_setting('Time range','3 months'),_setting('Index','NIFTY 50'),_setting('Mode','Walk-forward'),
     _chips(['Run Backtest','Out-of-Sample','Monte Carlo','Sensitivity','Slippage','Transaction Cost'])]);
