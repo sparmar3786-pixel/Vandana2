@@ -8,7 +8,7 @@ def test_live_router_is_mounted_and_api_guard_fails_closed(monkeypatch):
     from backend.app import app
     from backend.live_api import guard
 
-    paths = {getattr(route, "path", None) for route in app.routes}
+    paths = set(app.openapi()["paths"])
     assert "/api/live/net" in paths
     assert "/terminal.html" in paths
 
