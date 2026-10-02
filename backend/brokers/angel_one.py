@@ -66,11 +66,22 @@ class AngelOneClient(DataSource):
         await self._login(); self._connected=True
 
     async def _login(self)->None:
-        if not (self.s.angel_client_id and self.s.angel_pin and self.s.angel_totp_secret): raise AuthError("Angel One client id / PIN / TOTP secret incomplete")
-        data=await self._post_raw("/rest/auth/angelbroking/user/v1/loginByPassword",{"clientcode":self.s.angel_client_id,"password":self.s.angel_pin,"totp":self.generate_totp()},authed=False)
-        d=data.get("data") or {}; self.jwt=d.get("jwtToken"); self.refresh_token=d.get("refreshToken") or self.refresh_token; self.feed_token=d.get("feedToken")
-        if not self.jwt: raise AuthError(f"login did not return jwtToken: {data}")
-        logger.info("angel_one: login ok for {}",self.s.angel_client_id)
+        client_id = (self.client_id_override or self.s.angel_client_id or "").strip()
+        pin = (self.s.angel_pin or "").strip()
+        if not (client_id and pin):
+            raise AuthError("Angel One client id / PIN incomplete")
+        data=await self._post_raw(
+            "/rest/auth/angelbroking/user/v1/loginByPassword",
+            {"clientcode":client_id,"password":pin,"totp":self.generate_totp()},
+            authed=False,
+        )
+        d=data.get("data") or {}
+        self.jwt=d.get("jwtToken")
+        self.refresh_token=d.get("refreshToken") or self.refresh_token
+        self.feed_token=d.get("feedToken")
+        if not self.jwt:
+            raise AuthError(f"login did not return jwtToken: {data}")
+        logger.info("angel_one: login ok for {}",client_id)
 
     async def _refresh(self)->None:
         if not self.refresh_token: await self._login(); return
