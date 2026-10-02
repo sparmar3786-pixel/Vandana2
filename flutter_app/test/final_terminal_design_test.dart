@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nse_ai_terminal/final_terminal_design.dart';
 
 void main(){
-  testWidgets('login screen exposes backend URL and separate API keys', (tester) async {
+  testWidgets('login screen exposes backend URL and Angel API credentials', (tester) async {
     await tester.pumpWidget(const FinalTerminalDesign());
     await tester.tap(find.byIcon(Icons.menu));
     await tester.pumpAndSettle();
@@ -12,12 +12,11 @@ void main(){
 
     expect(find.text('Backend URL'), findsOneWidget);
     expect(find.text('https://nse-algo-backend-live-production.up.railway.app'), findsOneWidget);
-    expect(find.text('Terminal API Key'), findsOneWidget);
     expect(find.text('Angel One API Key'), findsOneWidget);
     expect(find.text('Backend URL'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'CONNECT'), findsOneWidget);
-    expect(find.byIcon(Icons.visibility), findsNWidgets(2));
-    expect(find.byType(TextField), findsNWidgets(6));
+    expect(find.byIcon(Icons.visibility), findsOneWidget);
+    expect(find.byType(TextField), findsNWidgets(5));
   });
 
   testWidgets('Home page shows AI explanation notification for tapped button', (tester) async {
