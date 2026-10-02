@@ -109,3 +109,7 @@ def regime_evaluator(meta,ctx):
 REGIME_EVAL=regime_evaluator
 
 EVALUATORS={"OI / Position":OI_EVAL,"Premium / Price":PREMIUM_EVAL,"Volume":VOLUME_EVAL,"CE/PE":CEPE_EVAL,"Short-Covering / Seller":SELLER_EVAL,"Strike / Option-Chain":STRIKE_EVAL,"Support/Resistance":SR_EVAL,"Trend/Price Action":TREND_EVAL,"RSI/MACD/Volatility":OSC_EVAL,"Greeks/IV":GREEKS_EVAL,"Expiry":EXPIRY_EVAL,"Liquidity/Microstructure":LIQUIDITY_EVAL,"Trap/Reversal":TRAP_EVAL,"Market Regime":REGIME_EVAL}
+
+
+# Backward-compatible name expected by the registry.
+FAMILY_EVALUATORS = EVALUATORS
