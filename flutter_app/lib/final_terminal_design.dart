@@ -108,7 +108,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
       _education,_models,_feed,_btSettings,_research,_classification,_oi,_final,_angelApi,_search];
     return _shell(pages[p],b[p]());
   }
-  Widget _shell(String title,Widget child)=>SafeArea(child:ListView(padding:const EdgeInsets.fromLTRB(13,10,13,24),children:[
+  Widget _shell(String title,Widget child)=>SafeArea(child:ListView(padding:const EdgeInsets.fromLTRB(13,10,13,110),children:[
     Text(title,style:const TextStyle(fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:12),child]));
 
   Widget _launch()=>Column(children:[const SizedBox(height:25),_logo(88),const SizedBox(height:14),
@@ -172,7 +172,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Widget _login()=>Column(children:[
     TextField(controller:backendController,decoration:const InputDecoration(labelText:'Backend URL',prefixIcon:Icon(Icons.link)),onChanged:(v)=>backendUrl=v),
     const SizedBox(height:8),
-    _info('Backend URL is pre-filled with the Render live backend. You can edit it when needed.',Icons.cloud),
+    _info('Backend URL is pre-filled with the Railway production backend. You can edit it when needed.',Icons.cloud),
     const SizedBox(height:4),
     _info('Terminal API Key authenticates this APK to your backend.',Icons.vpn_key),
     TextField(controller:terminalApiKeyController,obscureText:!showTerminalApiKey,decoration:InputDecoration(labelText:'Terminal API Key',hintText:'Enter terminal key',prefixIcon:const Icon(Icons.key),suffixIcon:IconButton(tooltip:showTerminalApiKey?'Hide':'Show',onPressed:()=>setState(()=>showTerminalApiKey=!showTerminalApiKey),icon:Icon(showTerminalApiKey?Icons.visibility_off:Icons.visibility)))),
@@ -184,7 +184,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
     const SizedBox(height:8),
     TextField(controller:pinController,obscureText:true,decoration:const InputDecoration(labelText:'PIN',prefixIcon:Icon(Icons.password))),
     const SizedBox(height:8),
-    TextField(controller:totpController,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'TOTP',prefixIcon:Icon(Icons.verified_user))),
+    TextField(controller:totpController,keyboardType:TextInputType.number,obscureText:true,decoration:const InputDecoration(labelText:'TOTP',prefixIcon:Icon(Icons.verified_user),hintText:'6 digit TOTP')),
     const SizedBox(height:10),
     FilledButton.icon(onPressed:_loginAngel,icon:const Icon(Icons.login),label:const Text('CONNECT')),
     if(loginStatus.isNotEmpty) Padding(padding:const EdgeInsets.only(top:8),child:Text(loginStatus)),
@@ -235,7 +235,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
         }
         setState(()=>apiStatus=r.statusCode==503
             ?'Backend reachable • enter Angel One credentials to create a session'
-            :'Backend reachable • Terminal API Key rejected; Angel login can still establish a session');
+            :'Backend reachable • Terminal API Key rejected. Enter valid Angel One credentials and tap Connect to establish a session.');
         return;
       }
       if(r.statusCode<300 && j['connected']==true){
@@ -736,7 +736,34 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
 
   Widget _indexStrip()=>SingleChildScrollView(scrollDirection:Axis.horizontal,child:Row(children:indices.map((x)=>Padding(padding:const EdgeInsets.only(right:6),child:ActionChip(label:Text(x),onPressed:()=>setState(()=>tab=3)))).toList()));
   Widget _grid(List<List<String>> a)=>GridView.count(crossAxisCount:2,shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),crossAxisSpacing:7,mainAxisSpacing:7,childAspectRatio:3,children:a.map((x)=>Card(child:Padding(padding:const EdgeInsets.all(9),child:Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[Text(x[0],style:const TextStyle(fontSize:11)),Text(x[1],style:const TextStyle(fontWeight:FontWeight.w800))])))).toList());
-  Widget _row(String a,String b,String c)=>Card(child:ListTile(dense:true,title:Text(a,style:const TextStyle(fontWeight:FontWeight.w700)),subtitle:Text(b),trailing:Text(c)));
+  Widget _row(String a,String b,String c)=>Card(
+    child:Padding(
+      padding:const EdgeInsets.symmetric(horizontal:16,vertical:12),
+      child:Row(
+        crossAxisAlignment:CrossAxisAlignment.start,
+        children:[
+          Expanded(
+            flex:4,
+            child:Column(
+              crossAxisAlignment:CrossAxisAlignment.start,
+              children:[
+                Text(a,style:const TextStyle(fontWeight:FontWeight.w700)),
+                const SizedBox(height:3),
+                Text(b,softWrap:true),
+              ],
+            ),
+          ),
+          if(c.isNotEmpty) ...[
+            const SizedBox(width:12),
+            Flexible(
+              flex:5,
+              child:Text(c,textAlign:TextAlign.right,softWrap:true,maxLines:5),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
   Widget _setting(String a,String b)=>_row(a,b,'');
   Widget _oiCard(String title,String formula,String desc,Color color,IconData icon)=>Card(child:ListTile(leading:CircleAvatar(backgroundColor:color.withValues(alpha:.14),foregroundColor:color,child:Icon(icon)),title:Text(title,style:TextStyle(fontWeight:FontWeight.w900,color:color)),subtitle:Text('$formula\n$desc')));
   Widget _verdict(String title,String desc,Color color)=>Card(child:Container(padding:const EdgeInsets.all(13),decoration:BoxDecoration(borderRadius:BorderRadius.circular(15),border:Border(left:BorderSide(color:color,width:5))),child:Row(children:[Icon(Icons.circle,color:color,size:12),const SizedBox(width:9),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:TextStyle(fontWeight:FontWeight.w900,color:color)),Text(desc)]))])));
