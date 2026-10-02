@@ -43,7 +43,7 @@ async def _stop_live_recorder() -> None:
 
 
 def _vm_guard(x_key: str) -> None:
-    expected = os.getenv("VM_SECRET") or os.getenv("TERMINAL_API_KEY", "")
+    expected = os.getenv("VM_SECRET", "")
     if not expected or not hmac.compare_digest(x_key or "", expected):
         raise HTTPException(403, "bad key")
 
