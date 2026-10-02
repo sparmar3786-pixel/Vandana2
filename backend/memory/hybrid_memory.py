@@ -1,10 +1,10 @@
 from __future__ import annotations
 from typing import Any, Dict, Optional
-import httpx
+import requests
 from backend.memory.strategy_memory import StrategyMemory
 
 class HybridMemory:
-    """Write-through local memory plus best-effort Supabase durable memory."""
+    """Synchronous write-through memory; cloud failure never blocks the engine."""
 
     def __init__(self, local: StrategyMemory, url: str = "", service_key: str = ""):
         self.local = local
@@ -12,27 +12,28 @@ class HybridMemory:
         self.service_key = service_key
         self.enabled = bool(self.url and self.service_key)
 
-    def _headers(self) -> Dict[str, str]:
-        return {
-            "apikey": self.service_key,
-            "Authorization": f"Bearer {self.service_key}",
-            "Content-Type": "application/json",
-            "Prefer": "return=minimal",
-        }
-
-    async def _insert(self, table: str, row: Dict[str, Any]) -> None:
+    def _insert(self, table: str, row: Dict[str, Any]) -> None:
         if not self.enabled:
             return
         try:
-            async with httpx.AsyncClient(timeout=4.0) as client:
-                r = await client.post(f"{self.url}/rest/v1/{table}", headers=self._headers(), json=row)
-                r.raise_for_status()
+            r = requests.post(
+                f"{self.url}/rest/v1/{table}",
+                headers={
+                    "apikey": self.service_key,
+                    "Authorization": f"Bearer {self.service_key}",
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal",
+                },
+                json=row,
+                timeout=1.5,
+            )
+            r.raise_for_status()
         except Exception:
             return
 
-    async def record_observation(self, rec: Dict[str, Any]) -> None:
+    def record_observation(self, rec: Dict[str, Any]) -> None:
         self.local.record_observation(rec)
-        await self._insert("strategy_memory", {
+        self._insert("strategy_memory", {
             "index_name": rec.get("index"), "regime": rec.get("regime"),
             "strategy": rec.get("strategy"), "strike": rec.get("strike"),
             "side": rec.get("side"), "entry": rec.get("entry"),
@@ -43,9 +44,9 @@ class HybridMemory:
             "confidence": rec.get("confidence"), "extra": rec.get("extra"),
         })
 
-    async def record_trade(self, rec: Dict[str, Any]) -> None:
+    def record_trade(self, rec: Dict[str, Any]) -> None:
         self.local.record_trade(rec)
-        await self._insert("trade_memory", {
+        self._insert("trade_memory", {
             "strategy": rec.get("strategy_id"), "index_name": rec.get("index"),
             "side": rec.get("side"), "strike": rec.get("strike"),
             "entry": rec.get("entry"), "exit": rec.get("exit"), "r": rec.get("r"),
