@@ -1,0 +1,13 @@
+name = "vandana2-edge"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[vars]
+BACKEND_ORIGIN = "https://REPLACE_WITH_BACKEND_HOST"
+
+[assets]
+directory = "../frontend"
+binding = "ASSETS"
+
+[observability]
+enabled = true
