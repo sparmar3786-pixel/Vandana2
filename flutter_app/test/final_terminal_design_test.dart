@@ -11,7 +11,7 @@ void main(){
     await tester.pumpAndSettle();
 
     expect(find.text('Backend URL'), findsOneWidget);
-    expect(find.text('https://nse-algo-backend-production.up.railway.app'), findsOneWidget);
+    expect(find.text('https://nse-algo-backend-live-production.up.railway.app'), findsOneWidget);
     expect(find.text('Terminal API Key'), findsOneWidget);
     expect(find.text('Angel One API Key'), findsOneWidget);
     expect(find.text('Backend URL'), findsOneWidget);
