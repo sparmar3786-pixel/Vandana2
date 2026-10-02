@@ -10,7 +10,7 @@ class FinalTerminalDesign extends StatefulWidget {
 class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   ThemeMode mode=ThemeMode.light;
   int tab=0;
-  String backendUrl='https://vandana2-nse-backend.onrender.com';
+  String backendUrl='https://nse-algo-backend-live-production.up.railway.app';
   String selectedIndex='NIFTY 50';
   String selectedTimeframe='FIVE_MINUTE';
   final Set<String> selectedIndicators={'EMA 8','EMA 13','EMA 20/50','VWAP','RSI','MACD','ATR','Bollinger'};
@@ -187,20 +187,67 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   String _apiIndex(String x)=>x.replaceAll(' ','')=='NIFTY50'?'NIFTY':x.replaceAll(' ','').toUpperCase();
 
   Future<void> _connectBackend() async {
-    var base=backendUrl.trim();
+    var base=backendController.text.trim();
     while(base.endsWith('/')) { base=base.substring(0,base.length-1); }
+    backendUrl=base;
     if(base.isEmpty){setState(()=>apiStatus='Enter backend URL first');return;}
+    if(terminalApiKeyController.text.trim().isEmpty){
+      setState(()=>apiStatus='Backend URL is reachable, but Terminal API Key is required.');
+      return;
+    }
+    setState(()=>apiStatus='Checking backend authentication…');
     try{
       final h=await http.get(Uri.parse('$base/health')).timeout(const Duration(seconds:12));
-      if(h.statusCode<200 || h.statusCode>=300){setState(()=>apiStatus='Backend HTTP '+h.statusCode.toString());return;}
-      final r=await http.get(Uri.parse('$base/api/live/angel/token'),headers:_authHeaders()).timeout(const Duration(seconds:12));
+      if(h.statusCode<200 || h.statusCode>=300){
+        setState(()=>apiStatus='Backend HTTP '+h.statusCode.toString());
+        return;
+      }
+
+      final r=await http.get(
+        Uri.parse('$base/api/live/angel/token'),
+        headers:_authHeaders(),
+      ).timeout(const Duration(seconds:12));
+
       Map<String,dynamic> j={};
       try{j=jsonDecode(r.body) as Map<String,dynamic>;}catch(_){}
-      if(r.statusCode==401){setState(()=>apiStatus='Backend reachable • Terminal API Key rejected');return;}
-      if(r.statusCode==503){setState(()=>apiStatus='Backend reachable • TERMINAL_API_KEY missing on server');return;}
-      setState(()=>apiStatus=r.statusCode<300 && j['connected']==true?'Angel One connected':r.statusCode<300?'Backend connected • Angel login required':'Backend API error '+r.statusCode.toString());
-      if(r.statusCode<300){await _loadCandles(); await _loadAiLayers(); await _loadMcpStatus();}
-    }catch(_){setState(()=>apiStatus='Backend connection failed • check URL/network');}
+
+      if(r.statusCode==401){
+        setState(()=>apiStatus='Backend reachable • Terminal API Key rejected');
+        return;
+      }
+      if(r.statusCode==503){
+        setState(()=>apiStatus='Backend reachable • TERMINAL_API_KEY missing on server');
+        return;
+      }
+      if(r.statusCode<300 && j['connected']==true){
+        setState(()=>apiStatus='✅ Angel One connected • live terminal authenticated');
+        await _loadCandles();
+        await _loadAiLayers();
+        await _loadMcpStatus();
+        return;
+      }
+
+      final hasAngelCredentials=
+          angelApiKeyController.text.trim().isNotEmpty &&
+          clientIdController.text.trim().isNotEmpty &&
+          pinController.text.trim().isNotEmpty &&
+          totpController.text.trim().isNotEmpty;
+
+      if(hasAngelCredentials){
+        setState(()=>apiStatus='Backend authenticated • logging in to Angel One…');
+        await _loginAngel();
+        if(loginStatus=='Angel One connected'){
+          setState(()=>apiStatus='✅ Angel One connected • live terminal ready');
+          await _loadCandles();
+          await _loadAiLayers();
+          await _loadMcpStatus();
+        }
+      }else{
+        setState(()=>apiStatus='✅ Backend authenticated • enter Angel One API key, Client ID, PIN and TOTP');
+      }
+    }catch(e){
+      setState(()=>apiStatus='Backend connection failed • '+e.runtimeType.toString());
+    }
   }
 
   Future<void> _loadCandles() async {
@@ -402,12 +449,82 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   ]);
 
   Widget _angelApi()=>Column(children:[
-    TextField(controller:backendController,decoration:const InputDecoration(labelText:'Backend URL',prefixIcon:Icon(Icons.link)),onChanged:(v)=>backendUrl=v),
+    TextField(
+      controller:backendController,
+      decoration:const InputDecoration(
+        labelText:'Backend URL',
+        prefixIcon:Icon(Icons.link),
+        hintText:'https://nse-algo-backend-live-production.up.railway.app',
+      ),
+      onChanged:(v)=>backendUrl=v,
+    ),
     const SizedBox(height:8),
-    FilledButton.icon(onPressed:_connectBackend,icon:const Icon(Icons.login),label:const Text('CONNECT ANGEL ONE LIVE')),
+    _info('Live backend: Railway production service. API secrets stay outside the APK.',Icons.cloud_done),
+    TextField(
+      controller:terminalApiKeyController,
+      obscureText:true,
+      decoration:const InputDecoration(
+        labelText:'Terminal API Key',
+        hintText:'Paste the key configured on Railway/Render',
+        prefixIcon:Icon(Icons.key),
+      ),
+    ),
+    const SizedBox(height:8),
+    TextField(
+      controller:angelApiKeyController,
+      obscureText:!showAngelApiKey,
+      decoration:InputDecoration(
+        labelText:'Angel One API Key',
+        hintText:'Optional when already configured on server',
+        prefixIcon:const Icon(Icons.key),
+        suffixIcon:IconButton(
+          tooltip:showAngelApiKey?'Hide':'Show',
+          onPressed:()=>setState(()=>showAngelApiKey=!showAngelApiKey),
+          icon:Icon(showAngelApiKey?Icons.visibility_off:Icons.visibility),
+        ),
+      ),
+    ),
+    const SizedBox(height:8),
+    TextField(
+      controller:clientIdController,
+      decoration:const InputDecoration(
+        labelText:'Angel One Client ID',
+        hintText:'Optional when already configured on server',
+        prefixIcon:Icon(Icons.person),
+      ),
+    ),
+    const SizedBox(height:8),
+    TextField(
+      controller:pinController,
+      obscureText:true,
+      decoration:const InputDecoration(
+        labelText:'Angel One PIN',
+        hintText:'4 digit PIN',
+        prefixIcon:Icon(Icons.password),
+      ),
+    ),
+    const SizedBox(height:8),
+    TextField(
+      controller:totpController,
+      keyboardType:TextInputType.number,
+      decoration:const InputDecoration(
+        labelText:'Angel One TOTP',
+        hintText:'6 digit TOTP',
+        prefixIcon:Icon(Icons.verified_user),
+      ),
+    ),
+    const SizedBox(height:10),
+    FilledButton.icon(
+      onPressed:_connectBackend,
+      icon:const Icon(Icons.login),
+      label:const Text('CONNECT ANGEL ONE LIVE'),
+    ),
     const SizedBox(height:8),
     _row('Broker','Angel One SmartAPI',apiStatus),
-    _info('API keys, client PIN and TOTP remain server-side. APK calls only your backend.',Icons.security),
+    _info(
+      'Terminal API Key authenticates the APK to the backend. Angel One API key/client ID/PIN/TOTP are only sent to the configured backend for login.',
+      Icons.security,
+    ),
     _setting('Live quote','SmartAPI FULL + WebSocket'),
     _setting('Historical candles','SmartAPI Historical API'),
     _setting('Option Greeks','Delta • Gamma • Theta • Vega • IV'),
