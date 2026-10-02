@@ -3,6 +3,7 @@ name: Live terminal tests
 on:
   push:
     branches:
+      - main
       - feature/live-terminal-integration
   pull_request:
 
