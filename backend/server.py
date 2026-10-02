@@ -41,17 +41,29 @@ def start_workers():
     threading.Thread(target=nse_loop, daemon=True, name="nse-data-loop").start()
 
 def _ensure_angel():
+    # Manual APK login is the normal path; do not repeatedly call Angel when
+    # no server credentials are configured.
     if client.api is None:
-        client.login(); state["angel_message"]="Connected using server credentials."
+        if not (C.API_KEY and C.CLIENT and C.PIN):
+            return
+        client.login()
+        state["angel_message"]="Connected using server credentials."
+    else:
+        client.ensure_session()
 
 def loop():
     while True:
         try:
             _ensure_angel()
-            if market_open():
-                eng.update(client.snapshot()); state["last_update"]=time.time(); state["error"]=None
+            if client.api is not None and market_open():
+                eng.update(client.snapshot())
+                state["last_update"]=time.time()
+                state["error"]=None
+                state["angel_message"]="Angel One connected."
         except Exception as e:
-            state["error"]=str(e); state["angel_message"]="Angel connection failed."; client.api=None; time.sleep(10)
+            state["error"]=str(e)[:500]
+            state["angel_message"]="Angel connection failed: " + str(e)[:180]
+            client.api=None
         time.sleep(C.POLL_SEC)
 
 def nse_loop():
@@ -68,7 +80,11 @@ def auth(x_token:str):
 
 @app.get("/health")
 def health():
-    return {"ok":True,"market_open":market_open(),"angel_connected":client.api is not None,"angel_message":state["angel_message"],"nse_mcp":"configured","last_update":state["last_update"],"error":state["error"],"nse_error":state["nse_error"],"nse_mcp_error":state["nse_mcp_error"]}
+    return {"ok":True,"market_open":market_open(),"angel_connected":client.api is not None,
+            "angel_websocket":client.live_connected,"angel_last_tick":client.live_last_tick,
+            "angel_message":state["angel_message"],"nse_mcp":"configured",
+            "last_update":state["last_update"],"error":state["error"],
+            "nse_error":state["nse_error"],"nse_mcp_error":state["nse_mcp_error"]}
 
 @app.post("/v1/angel/login")
 def angel_login(body:AngelLoginRequest,x_token:str=Header(None)):
@@ -78,13 +94,25 @@ def angel_login(body:AngelLoginRequest,x_token:str=Header(None)):
         result=client.login(api_key=body.apiKey or C.API_KEY,client_code=body.clientId,pin=body.pin,totp=body.totp)
         state["angel_message"]="Angel One connected."; state["error"]=None
         return {"ok":True,"connected":True,"message":"Angel One connected.","profile":result.get("data",{}).get("clientcode")}
-    except Exception:
-        client.api=None; state["angel_message"]="Angel connection failed."; state["error"]="Angel login failed"
-        raise HTTPException(401,"Angel login failed. Check Client ID, PIN, TOTP and API key.")
+    except Exception as e:
+        client.api=None
+        state["angel_message"]="Angel connection failed: " + str(e)[:180]
+        state["error"]=str(e)[:500]
+        raise HTTPException(401,detail=state["error"])
 
 @app.get("/v1/angel/status")
 def angel_status(x_token:str=Header(None)):
-    auth(x_token); return {"connected":client.api is not None,"message":state["angel_message"],"last_update":state["last_update"],"error":state["error"]}
+    auth(x_token)
+    return {"connected":client.api is not None,"websocket":client.live_connected,
+            "last_tick":client.live_last_tick,"message":state["angel_message"],
+            "last_update":state["last_update"],"error":state["error"] or client.last_error}
+
+@app.get("/v1/angel/live")
+def angel_live(x_token:str=Header(None)):
+    auth(x_token)
+    return {"connected":client.api is not None,"websocket":client.live_connected,
+            "last_tick":client.live_last_tick,"error":client.live_error,
+            "ticks":list(client.live_ticks.values())[-200:]}
 
 
 def angel_required():
