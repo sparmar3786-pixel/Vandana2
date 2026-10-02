@@ -25,7 +25,7 @@ import json
 from contextlib import asynccontextmanager
 from typing import Any, Dict, Set
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -269,7 +269,13 @@ async def api_candles(index:str, interval:str="FIVE_MINUTE", days:int=5) -> Dict
 # ----------------------------- WS -----------------------------
 
 @app.websocket("/ws")
-async def ws_endpoint(ws: WebSocket) -> None:
+async def ws_endpoint(ws: WebSocket, key: str | None = Query(default=None)) -> None:
+    if key:
+        import hmac, os
+        expected = os.getenv("VM_SECRET") or os.getenv("TERMINAL_API_KEY", "")
+        if not expected or not hmac.compare_digest(key, expected):
+            await ws.close(code=1008)
+            return
     await manager.connect(ws)
     try:
         # initial handshake frame with config
