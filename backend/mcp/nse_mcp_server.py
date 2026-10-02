@@ -1,7 +1,6 @@
 """NSE MCP server using the official MCP SDK.
 
-Exposes read-only market/engine tools plus PAPER orders. LIVE orders remain
-guarded by the central live-order flag and human confirmation token.
+Exposes read-only NSE market/engine tools. Order placement is not exposed.
 """
 from __future__ import annotations
 import argparse
@@ -14,7 +13,7 @@ try:
 except Exception as e:
  FastMCP=None;_IMPORT_ERROR=e
 else:_IMPORT_ERROR=None
-_settings=get_settings();_source=None;_engine=None;_paper_orders={}
+_settings=get_settings();_source=None;_engine=None
 
 async def _get_source():
  global _source
@@ -68,13 +67,6 @@ def _build():
   d=await (await _get_engine()).run_strategy_scan(index)
   return {"index":index,"verdict":d.get("verdict"),"plans":d.get("plans_qualifying"),"suppressed":d.get("plans_suppressed")}
  @mcp.tool()
- async def place_paper_order(index:str,strike:float,option_type:str,side:str="BUY",quantity:int=1)->Dict[str,Any]:
-  oid=f"paper-{len(_paper_orders)+1}";_paper_orders[oid]={"index":index,"strike":strike,"option_type":option_type,"side":side,"quantity":quantity}
-  return {"order_id":oid,"mode":"PAPER","accepted":True}
- @mcp.tool()
- async def cancel_paper_order(order_id:str)->Dict[str,Any]:
-  return {"order_id":order_id,"cancelled":bool(_paper_orders.pop(order_id,None))}
- @mcp.tool()
  async def place_live_order(index:str,strike:float,option_type:str,side:str,quantity:int,confirm:str)->Dict[str,Any]:
   if not _settings.live_orders_on:return {"accepted":False,"reason":"live orders disabled (ENABLE_LIVE_ORDERS=0)"}
   expected=f"{index}-{option_type}-{strike}-{side}"
@@ -88,6 +80,11 @@ def main():
  p.add_argument("--transport",choices=["stdio","sse"],default=_settings.nse_mcp_transport);p.add_argument("--port",type=int,default=_settings.nse_mcp_sse_port)
  a=p.parse_args();mcp=_build();log.info("nse-mcp starting (transport={})",a.transport)
  if a.transport=="sse":
-  import uvicorn;uvicorn.run(mcp.sse_app(),host="0.0.0.0",port=a.port)
+  import uvicorn
+  from starlette.responses import PlainTextResponse
+  app=mcp.sse_app()
+  async def health(_request): return PlainTextResponse("ok")
+  app.add_route("/health", health, methods=["GET"])
+  uvicorn.run(app,host="0.0.0.0",port=a.port)
  else:mcp.run(transport="stdio")
 if __name__=="__main__":main()
