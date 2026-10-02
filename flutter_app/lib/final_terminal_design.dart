@@ -10,7 +10,7 @@ class FinalTerminalDesign extends StatefulWidget {
 class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   ThemeMode mode=ThemeMode.light;
   int tab=0;
-  String backendUrl='https://nse-algo-backend-live-production.up.railway.app';
+  String backendUrl='https://vandana2-nse-backend.onrender.com';
   String selectedIndex='NIFTY 50';
   String selectedTimeframe='FIVE_MINUTE';
   final Set<String> selectedIndicators={'EMA 8','EMA 13','EMA 20/50','VWAP','RSI','MACD','ATR','Bollinger'};
@@ -166,7 +166,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   Widget _login()=>Column(children:[
     TextField(controller:backendController,decoration:const InputDecoration(labelText:'Backend URL',prefixIcon:Icon(Icons.link)),onChanged:(v)=>backendUrl=v),
     const SizedBox(height:8),
-    _info('Backend URL is pre-filled with your Railway live backend. You can edit it when needed.',Icons.cloud),
+    _info('Backend URL is pre-filled with the Render live backend. You can edit it when needed.',Icons.cloud),
     const SizedBox(height:4),
     _info('Terminal API Key authenticates this APK to your backend.',Icons.vpn_key),
     TextField(controller:terminalApiKeyController,obscureText:!showTerminalApiKey,decoration:InputDecoration(labelText:'Terminal API Key',hintText:'Enter terminal key',prefixIcon:const Icon(Icons.key),suffixIcon:IconButton(tooltip:showTerminalApiKey?'Hide':'Show',onPressed:()=>setState(()=>showTerminalApiKey=!showTerminalApiKey),icon:Icon(showTerminalApiKey?Icons.visibility_off:Icons.visibility)))),
