@@ -262,6 +262,13 @@ def build_router(get_engine: Callable[[], Any]) -> APIRouter:
         c.jwt, c.feed_token = d["jwtToken"], d.get("feedToken")
         c.refresh_token = d.get("refreshToken") or c.refresh_token
         c._connected = True
+        eng = get_engine()
+        if eng is not None:
+            eng._source = c
+            eng._running = True
+            if s.ai_on and eng._ai is None:
+                from backend.ai.six_layer_ai import build_ai_client
+                eng._ai = build_ai_client(s)
         return token_info(c)
 
     @r.post("/angel/refresh")
