@@ -46,6 +46,7 @@ class AngelOneClient(DataSource):
     def __init__(self, *, price_scale: float=100.0, api_key: Optional[str]=None) -> None:
         s=get_settings(); super().__init__(rps=s.rate_limit_rps); self.s=s; self.price_scale=price_scale
         self.api_key_override=api_key.strip() if api_key else None
+        self.client_id_override=None
         self._limiter=_AsyncRateLimiter(s.rate_limit_rps); self.jwt=None; self.refresh_token=s.angel_refresh_token or None
         self.feed_token=None; self._session=requests.Session(); self._instruments=None; self._all_instruments=None; self._token_index={}; self._index_tokens={}; self._ws=None
 
@@ -288,7 +289,7 @@ class AngelOneWebSocket:
             async with self._send_lock: await self._ws.send(json.dumps(msg))
         except Exception as e: logger.warning("angel_one ws: send failed ({})",e)
     def _ws_headers(self):
-        return {"Authorization":self.client.jwt or "","x-api-key":self.client.s.angel_api_key,"x-client-code":self.client.s.angel_client_id,"x-feed-token":self.client.feed_token or ""}
+        return {"Authorization":self.client.jwt or "","x-api-key":(self.client.api_key_override or self.client.s.angel_api_key),"x-client-code":(self.client.client_id_override or self.client.s.angel_client_id),"x-feed-token":self.client.feed_token or ""}
     async def _connect(self):
         h=self._ws_headers()
         try:return await websockets.connect(SMART_STREAM_URL,additional_headers=h,ping_interval=None,max_size=2**22)
