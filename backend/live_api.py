@@ -90,7 +90,7 @@ def guard(
 ) -> None:
     # Angel login is the bootstrap endpoint. It still requires HTTPS in production
     # and validates the supplied Angel One credentials before issuing a session.
-    if request.url.path.endswith("/angel/login"):
+    if request is not None and request.url.path.endswith("/angel/login"):
         return
 
     key = os.getenv("TERMINAL_API_KEY", "")
