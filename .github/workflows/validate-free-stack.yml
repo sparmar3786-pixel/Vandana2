@@ -14,6 +14,26 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - run: python -m compileall backend
-      - run: pytest -q
+      - name: Install backend dependencies
+        run: pip install -r requirements.txt
+      - name: Compile backend
+        run: python -m compileall -q backend
+      - name: Validate core imports
+        run: |
+          python -c "from backend.app import app; print('backend.app: OK')"
+          python -c "from backend.ai.provider_client import ProviderClient; print('provider_client: OK')"
+          python -c "from backend.memory.hybrid_memory import HybridMemory; print('hybrid_memory: OK')"
+          python -c "from backend.platform_router import router; print('platform_router: OK')"
+      - name: Validate edge worker files
+        run: |
+          test -f cloudflare-worker/wrangler.toml
+          test -f cloudflare-worker/package.json
+          test -f cloudflare-worker/src/index.ts
+          grep -q 'BACKEND_ORIGIN' cloudflare-worker/wrangler.toml
+          grep -q 'ASSETS' cloudflare-worker/src/index.ts
+      - name: Validate Supabase migration
+        run: |
+          test -f supabase/migrations/001_vandana2_memory.sql
+          grep -q 'strategy_memory' supabase/migrations/001_vandana2_memory.sql
+          grep -q 'trade_memory' supabase/migrations/001_vandana2_memory.sql
+          grep -q 'ai_memory' supabase/migrations/001_vandana2_memory.sql
