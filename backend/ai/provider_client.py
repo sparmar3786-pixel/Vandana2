@@ -32,7 +32,8 @@ class ProviderClient:
         provider=_infer_provider(model); client=self._client(provider)
         if client is None:
             logger.debug("provider {} has no key; skipping",provider); return None
-        kwargs={"model":model,"messages":messages,"temperature":temperature,"max_tokens":max_tokens}
+        api_model=model.split("/",1)[1] if model.startswith((provider+"/",)) else model
+        kwargs={"model":api_model,"messages":messages,"temperature":temperature,"max_tokens":max_tokens}
         if tools: kwargs["tools"]=tools
         try:
             resp=await client.chat.completions.create(**kwargs)
