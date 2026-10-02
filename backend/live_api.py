@@ -84,9 +84,9 @@ except Exception:
 
 
 def guard(
-    request: Request,
     x_api_key: str = Header(default=""),
     x_session_token: str = Header(default=""),
+    request: Request | None = None,
 ) -> None:
     # Angel login is the bootstrap endpoint. It still requires HTTPS in production
     # and validates the supplied Angel One credentials before issuing a session.
