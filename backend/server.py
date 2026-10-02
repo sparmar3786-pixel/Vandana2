@@ -27,6 +27,26 @@ class AngelLoginRequest(BaseModel):
     totp:str
     apiKey:Optional[str]=None
 
+
+class LegacyAngelLoginRequest(BaseModel):
+    clientId:Optional[str]=None
+    client_id:Optional[str]=None
+    clientCode:Optional[str]=None
+    clientcode:Optional[str]=None
+    pin:Optional[str]=None
+    password:Optional[str]=None
+    totp:Optional[str]=None
+    apiKey:Optional[str]=None
+    api_key:Optional[str]=None
+
+
+def _legacy_value(body: LegacyAngelLoginRequest, *names: str) -> str:
+    for name in names:
+        value = getattr(body, name, None)
+        if value:
+            return str(value).strip()
+    return ""
+
 def market_open():
     now=dt.datetime.now(dt.timezone(dt.timedelta(hours=5,minutes=30)))
     return now.weekday()<5 and dt.time(9,15)<=now.time()<=dt.time(15,30)
@@ -85,6 +105,32 @@ def health():
             "angel_message":state["angel_message"],"nse_mcp":"configured",
             "last_update":state["last_update"],"error":state["error"],
             "nse_error":state["nse_error"],"nse_mcp_error":state["nse_mcp_error"]}
+
+
+
+@app.post("/api/live/angel/login")
+def legacy_angel_login(body:LegacyAngelLoginRequest,x_token:str=Header(None)):
+    """Backward-compatible login route for older Vandana2 APK builds.
+
+    It deliberately does not read or require TERMINAL_API_KEY. Credentials are
+    forwarded only to the same server-side SmartAPI login used by /v1/angel/login.
+    """
+    auth(x_token)
+    client_id=_legacy_value(body,"clientId","client_id","clientCode","clientcode")
+    pin=_legacy_value(body,"pin","password")
+    totp=_legacy_value(body,"totp")
+    api_key=_legacy_value(body,"apiKey","api_key")
+    if not client_id or not pin or not api_key or len(totp)!=6 or not totp.isdigit():
+        raise HTTPException(400,"Client ID, PIN, SmartAPI API key and current 6-digit TOTP are required.")
+    try:
+        result=client.login(api_key=api_key,client_code=client_id,pin=pin,totp=totp)
+        state["angel_message"]="Angel One connected."; state["error"]=None
+        return {"ok":True,"connected":True,"message":"Angel One connected.","profile":result.get("data",{}).get("clientcode")}
+    except Exception as e:
+        client.api=None
+        state["angel_message"]="Angel connection failed: " + str(e)[:180]
+        state["error"]=str(e)[:500]
+        raise HTTPException(401,detail=state["error"])
 
 @app.post("/v1/angel/login")
 def angel_login(body:AngelLoginRequest,x_token:str=Header(None)):
