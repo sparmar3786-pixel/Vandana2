@@ -307,6 +307,10 @@ def build_router(get_engine: Callable[[], Any]) -> APIRouter:
             c.api_key_override = api_key
         if hasattr(c, "client_id_override"):
             c.client_id_override = cid
+        if hasattr(c, "pin_override"):
+            c.pin_override = pin
+        if hasattr(c, "totp_override"):
+            c.totp_override = totp
         try:
             d = (await c._post_raw("/rest/auth/angelbroking/user/v1/loginByPassword",
                                    {"clientcode": cid, "password": pin, "totp": totp}, authed=False)).get("data") or {}
