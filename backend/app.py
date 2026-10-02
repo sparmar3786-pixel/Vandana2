@@ -15,7 +15,10 @@ from fastapi import Header, HTTPException
 from fastapi.responses import FileResponse
 
 from backend.main import app
+from backend.live_api import build_router
 from backend.live_api import recorder
+
+app.include_router(build_router(lambda: getattr(__import__("backend.main", fromlist=["state"]), "state").engine))
 
 ROOT = Path(__file__).resolve().parent.parent
 _frontend = ROOT / "frontend"
