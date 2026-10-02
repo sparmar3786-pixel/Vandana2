@@ -10,7 +10,7 @@ def test_live_router_is_mounted_and_api_guard_fails_closed(monkeypatch):
 
     paths = set(app.openapi()["paths"])
     assert "/api/live/net" in paths
-    assert "/terminal.html" in paths
+    assert any(getattr(route, "path", None) == "/terminal.html" for route in app.routes)
 
     try:
         guard("")
