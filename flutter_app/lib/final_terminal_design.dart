@@ -144,10 +144,10 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
         Uri.parse('$base/api/live/angel/login'),
         headers:headers,
         body:jsonEncode({
-          'clientId':clientId.isEmpty?null:clientId,
+          'client_id':clientId.isEmpty?null:clientId,
           'pin':pin.isEmpty?null:pin,
           'totp':totp.isEmpty?null:totp,
-          'apiKey':angelKey.isEmpty?null:angelKey,
+          'api_key':angelKey.isEmpty?null:angelKey,
         }),
       ).timeout(const Duration(seconds:20));
 
