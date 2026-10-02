@@ -39,3 +39,6 @@ PUT side me direction ulta. Score = 0.5*OI + 0.3*EMA trend + 0.2*PCR. Entry ATM 
 
 ## Warning
 Order placement intentionally nahi hai. Pehle paper trade + backtest karein. Profit guaranteed nahi.
+
+
+Baseline: Vandana1 Build 156 process copied into Vandana2; legacy terminal implementation removed from the active source tree.
