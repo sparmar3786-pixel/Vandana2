@@ -95,7 +95,9 @@ def guard(
     # There is deliberately no Terminal API Key field in the APK/frontend.
     settings = get_settings()
     key = (settings.api_token or os.getenv("API_TOKEN") or "").strip()
-    provided = (x_token or x_app_key or x_api_key or "").strip()
+    def hv(v: Any) -> str:
+        return v if isinstance(v, str) else ""
+    provided = (hv(x_token) or hv(x_app_key) or hv(x_api_key)).strip()
 
     # Angel bootstrap remains usable without an app token when none is configured.
     if request is not None and request.url.path.endswith("/angel/login"):
