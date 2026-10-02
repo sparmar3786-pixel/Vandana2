@@ -1,10 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nse_ai_terminal/main.dart';
+import 'package:algo_terminal/main.dart';
 
 void main() {
-  testWidgets('renders the NSE-AI-TERMINAL shell', (tester) async {
+  testWidgets('NSE Algo Signal app starts', (WidgetTester tester) async {
     await tester.pumpWidget(const AlgoApp());
-    expect(find.text('NSE-AI-TERMINAL'), findsWidgets);
-    expect(find.text('LIVE'), findsOneWidget);
+    expect(find.text('NSE Algo Signal'), findsOneWidget);
   });
 }
