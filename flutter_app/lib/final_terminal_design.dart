@@ -10,7 +10,7 @@ class FinalTerminalDesign extends StatefulWidget {
 class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   ThemeMode mode=ThemeMode.light;
   int tab=0;
-  String backendUrl='https://nse-algo-backend-production.up.railway.app';
+  String backendUrl='https://nse-algo-backend-live-production.up.railway.app';
   String selectedIndex='NIFTY 50';
   String selectedTimeframe='FIVE_MINUTE';
   final Set<String> selectedIndicators={'EMA 8','EMA 13','EMA 20/50','VWAP','RSI','MACD','ATR','Bollinger'};
@@ -21,7 +21,7 @@ class _FinalTerminalDesignState extends State<FinalTerminalDesign>{
   String chartSection='Indices';
   String apiStatus='Backend URL required';
   String mcpStatus='MCP status not checked';
-  final TextEditingController backendController=TextEditingController(text:'https://nse-algo-backend-production.up.railway.app');
+  final TextEditingController backendController=TextEditingController(text:'https://nse-algo-backend-live-production.up.railway.app');
   final TextEditingController terminalApiKeyController=TextEditingController();
   final TextEditingController angelApiKeyController=TextEditingController();
   final TextEditingController clientIdController=TextEditingController();
