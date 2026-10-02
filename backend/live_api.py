@@ -7,7 +7,7 @@
 * AI daily memory       : per-day JSONL + downloadable file (for saving on the phone)
 * Setups                : latest decisions per index + per-day history
 
-Every route needs the header  X-API-Key: <TERMINAL_API_KEY>  (fails closed if unset).
+Protected live routes accept X-API-Key or a short-lived X-Session-Token issued after a successful Angel One login. The login route itself is intentionally bootstrap-accessible over HTTPS.
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 import pandas as pd
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import BaseModel
 
@@ -40,6 +40,11 @@ LIM = {"ONE_MINUTE": 30, "THREE_MINUTE": 60, "FIVE_MINUTE": 100, "TEN_MINUTE": 1
        "FIFTEEN_MINUTE": 200, "THIRTY_MINUTE": 200, "ONE_HOUR": 400, "ONE_DAY": 2000}
 
 _net = {"offline": False}
+# Short-lived app sessions let the APK complete Angel login even when a stale
+# Terminal API Key is present on the device. Sessions are memory-only and expire.
+_SESSION_TTL_SECONDS = int(os.getenv("TERMINAL_SESSION_TTL", "43200"))
+_sessions: Dict[str, float] = {}
+
 
 
 def _today() -> str:
@@ -78,12 +83,33 @@ except Exception:
     pass
 
 
-def guard(x_api_key: str = Header(default="")) -> None:
+def guard(
+    request: Request,
+    x_api_key: str = Header(default=""),
+    x_session_token: str = Header(default=""),
+) -> None:
+    # Angel login is the bootstrap endpoint. It still requires HTTPS in production
+    # and validates the supplied Angel One credentials before issuing a session.
+    if request.url.path.endswith("/angel/login"):
+        return
+
     key = os.getenv("TERMINAL_API_KEY", "")
+    if key and hmac.compare_digest(x_api_key, key):
+        return
+
+    now = time.time()
+    # Opportunistic cleanup.
+    expired = [k for k, exp in _sessions.items() if exp <= now]
+    for k in expired:
+        _sessions.pop(k, None)
+
+    if x_session_token and _sessions.get(x_session_token, 0) > now:
+        _sessions[x_session_token] = now + _SESSION_TTL_SECONDS
+        return
+
     if not key:
         raise HTTPException(503, "TERMINAL_API_KEY is not set on the server")
-    if not hmac.compare_digest(x_api_key, key):
-        raise HTTPException(401, "bad API key")
+    raise HTTPException(401, "bad API key or expired session")
 
 
 def online() -> None:
@@ -242,10 +268,16 @@ def build_router(get_engine: Callable[[], Any]) -> APIRouter:
             own["c"] = AngelOneClient()
         return own["c"]
 
-    def token_info(c: Any) -> dict:
-        return {"connected": bool(c.jwt), "jwt_tail": (c.jwt or "")[-6:] or None, "expires_at": _jwt_exp(c.jwt),
-                "has_refresh": bool(c.refresh_token), "has_feed": bool(c.feed_token),
-                "flow": "loginByPassword(clientcode+PIN+TOTP) -> jwt/refresh/feed"}
+    def token_info(c: Any, session_token: Optional[str] = None) -> dict:
+        return {
+            "connected": bool(c.jwt),
+            "jwt_tail": (c.jwt or "")[-6:] or None,
+            "expires_at": _jwt_exp(c.jwt),
+            "has_refresh": bool(c.refresh_token),
+            "has_feed": bool(c.feed_token),
+            "session_token": session_token,
+            "flow": "loginByPassword(clientcode+PIN+TOTP) -> jwt/refresh/feed",
+        }
 
     # ---- Angel One token flow ----
     @r.get("/angel/token")
@@ -283,7 +315,9 @@ def build_router(get_engine: Callable[[], Any]) -> APIRouter:
             if s.ai_on and eng._ai is None:
                 from backend.ai.six_layer_ai import build_ai_client
                 eng._ai = build_ai_client(s)
-        return token_info(c)
+        session_token = __import__("secrets").token_urlsafe(32)
+        _sessions[session_token] = time.time() + _SESSION_TTL_SECONDS
+        return token_info(c, session_token)
 
     @r.post("/angel/refresh")
     async def angel_refresh() -> dict:
