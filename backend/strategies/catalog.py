@@ -34,3 +34,47 @@ for i, name in enumerate(_NAMES, 1):
 def strategy_search(query: str = "") -> list[Strategy]:
     q = query.strip().lower()
     return [s for s in STRATEGY_REGISTRY.values() if not q or q in s.name.lower() or q in s.section.lower()]
+
+def module_names() -> list[str]:
+    return list(_NAMES)
+
+_FAMILY_BY_RANGE = (
+    (1, 28, "OI / Position"),
+    (29, 44, "Premium / Price"),
+    (45, 54, "Volume"),
+    (55, 72, "CE/PE"),
+    (73, 90, "Short-Covering / Seller"),
+    (91, 110, "Strike / Option-Chain"),
+    (111, 122, "Support/Resistance"),
+    (123, 149, "Trend/Price Action"),
+    (150, 167, "RSI/MACD/Volatility"),
+    (168, 184, "Greeks/IV"),
+    (185, 202, "Expiry"),
+    (203, 219, "Liquidity/Microstructure"),
+    (220, 234, "Trap/Reversal"),
+    (235, 246, "Market Regime"),
+    (247, 260, "Quant/Statistical"),
+    (261, 274, "Cross-Index/Breadth"),
+    (275, 284, "Fibonacci/Classical"),
+    (285, 305, "Entry/Exit/Risk"),
+    (306, 317, "Signal Intelligence"),
+    (318, 332, "Data/Reliability"),
+    (333, 354, "Backtest/Validation"),
+    (355, 367, "AI/Strategy Discovery"),
+    (368, 377, "Final Decision Engine"),
+)
+
+def _family(number: int) -> str:
+    for lo, hi, family in _FAMILY_BY_RANGE:
+        if lo <= number <= hi:
+            return family
+    return "Final Decision Engine"
+
+def build_meta():
+    from backend.models import StrategyMeta
+    return [
+        StrategyMeta(id=f"S{number:03d}", number=number, name=name, family=_family(number),
+                     inputs=[], math="", required_data=[], output="signal",
+                     failure_conditions=[], advanced=False, implemented=True)
+        for number, name in enumerate(_NAMES, 1)
+    ]
