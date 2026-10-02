@@ -86,7 +86,7 @@ except Exception:
 def guard(
     x_api_key: str = Header(default=""),
     x_session_token: str = Header(default=""),
-    request: Request | None = None,
+    request: Request = None,  # FastAPI injects Request; default keeps direct unit calls possible.
 ) -> None:
     # Angel login is the bootstrap endpoint. It still requires HTTPS in production
     # and validates the supplied Angel One credentials before issuing a session.
